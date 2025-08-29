@@ -1,0 +1,22 @@
+BeamCommander
+Copyright (C) 2025 Oliver Byte
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+Additional Terms / Clarifications:
+1. Network Use: Offering BeamCommander as a network or hosted service counts as distribution; you must provide complete corresponding source (AGPL requirement).
+2. Third-Party Components: This project bundles or depends on software under other licenses (MIT, BSD, MPL 2.0). Those licenses prevail for their respective components. See NOTICE for details.
+3. Brand: The name "BeamCommander" is not covered by the AGPL; do not imply endorsement without permission.
+
+SPDX-License-Identifier: AGPL-3.0-or-later

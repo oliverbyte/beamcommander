@@ -1,0 +1,36 @@
+# BeamCommander gitignore
+
+## Large third-party bundles (handled via Git LFS, not ignored)
+# third-party/open-stage-control/open-stage-control.app/
+
+# Build artifacts
+openframeworks/apps/myApps/BeamCommander/bin/
+openframeworks/apps/myApps/BeamCommander/obj/
+openframeworks/libs/openFrameworksCompiled/
+openframeworks/projectGenerator.app/
+
+# macOS noise
+.DS_Store
+
+# Editor / tooling
+.vscode/
+*.swp
+*.user
+
+# Logs / caches
+*.log
+cache/
+
+# Generated cue / mapping / session runtime files (adjust if you want to version them)
+cues.json
+joystick_mappings.json
+midi_mappings.json
+
+# (LFS will track large app bundle binaries)
+
+# Static libraries and large binaries (prevent >100MB pushes)
+*.a
+*.lib
+*.o
+*.obj
+

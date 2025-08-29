@@ -1,0 +1,35 @@
+{
+    "group": {
+        "label": "Default"
+    },
+    "lasers": [
+        {
+            "Object3D": {
+                "3D_Orientation": "0, 0, 0",
+                "3D_Position": "-150, 0, 0"
+            },
+            "visual3DParams": {
+                "group": {
+                    "Flip_X": "0",
+                    "Flip_Y": "0",
+                    "Output_Range_horizontal": "60",
+                    "Output_Range_vertical": "60"
+                }
+            }
+        },
+        {
+            "Object3D": {
+                "3D_Orientation": "0, 0, 0",
+                "3D_Position": "150, 0, 0"
+            },
+            "visual3DParams": {
+                "group": {
+                    "Flip_X": "1",
+                    "Flip_Y": "0",
+                    "Output_Range_horizontal": "60",
+                    "Output_Range_vertical": "60"
+                }
+            }
+        }
+    ]
+}

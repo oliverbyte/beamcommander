@@ -1,0 +1,1369 @@
+#!/usr/bin/env bash
+#
+# this is the OpenFrameworks library apothecary,
+# it mixes formulas and potions to build and update the C/C++ lib dependencies
+#
+# formulas are simple scripts which implement the download, build, copy, & clean
+# functions which are in turn called by this script,
+# see docs/formula_template.sh for a bare formula script
+#
+# Core OF lib formulas are located in the formulas dir and addon formulas should
+# be in addons/ofxMyAddon/scripts/formulas
+#
+# 2014 OpenFrameworks team
+# 2013 Dan Wilcox <danomatika@gmail.com>,
+# supported by the CMU Studio for Creative Inquiry: http://studioforcreativeinquiry.org
+#
+# references:
+#  http://stackoverflow.com/questions/12219001/standalone-shell-script-vs-shell-function
+#  http://www.tldp.org/LDP/abs/html/comparison-ops.html
+#  http://tldp.org/LDP/abs/html/fto.html
+#  http://www.developer.com/open/article.php/631241/Linux-Console-Colors--Other-Tricks.htm
+#  http://stackoverflow.com/questions/965053/extract-filename-and-extension-in-bash
+#  http://stackoverflow.com/questions/64786/error-handling-in-bash
+#  http://www.linuxjournal.com/content/bash-arrays
+
+################################################################################
+### GLOBAL VARS, for access inside formulas
+
+### SET IN FORMULA script
+
+# an array of build type strings supported by the forumla (optional)
+# see VALID_TYPES for list of strings, default: VALID_TYPES
+FORMULA_TYPES=()
+
+# an array of dependency libraries required by the formula (optional)
+FORMULA_DEPENDS=()
+
+# controls whether apothecary runs dependencies commands automatically (default),
+# set this if you need to do it manually
+FORMULA_DEPENDS_MANUAL=0
+
+# Build dependencies for formula
+BUILD_DEPENDENCIES=1
+
+### READ ONLY please!
+
+# build settings
+HOST_OS= # compile os ("osx", "windows", "linux")
+TYPE= # library build type ("osx", "ios", "vs", etc)
+ARCH=32 # library build arch, 32 or 64 bit (not used for some build types)
+
+# full path to this script's dir
+APOTHECARY_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# full path to the dir of the current formula
+FORMULA_DIR=
+
+# full path to the download/build dir
+BUILD_DIR=
+
+# full path to the destination dir for compiled libs
+LIBS_DIR=""
+
+# number of parallel tasks to run on make.
+# formulas should pass this as -j${PARALLEL_MAKE} to make
+PARALLEL_MAKE=1
+
+function getrealpath() { if command -v realpath 2>/dev/null; then
+  echo realpath $1;
+else
+	[[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+fi;
+ }
+
+realpath() {
+[[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+}
+
+### Xcode/ios specific settings
+
+# xcode Developer root
+if [ "$(${APOTHECARY_DIR}/ostype.sh)" == "osx" ]; then
+    XS="xcode-select -print-path" # stupid hack to keep my syntax highlighting from breaking :P
+    XCODE_DEV_ROOT=
+
+    # used when building some libs for osx
+    OSX_LATEST_SDK="xcrun -sdk macosx --show-sdk-version"
+    OSX_SDK_VER=10.15
+    OSX_MIN_SDK_VER=10.9
+
+    # used when building for ios, the sdks you have installed are found in:
+    # $XCODE_DEV_ROOT/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator#.#.sdk
+    IOS_LATEST_SDK="xcrun -sdk iphoneos --show-sdk-version" # stupid hack to keep my syntax highlighting from breaking :P
+    IOS_SDK_VER=9.1
+    IOS_MIN_SDK_VER=7.0
+
+
+fi
+
+# paths to android SDK, etc
+ANDROID_NDK_ROOT=
+ANDROID_SDK_ROOT=
+ANDROID_API=21
+ANDROID_PLATFORM=android-${ANDROID_API}
+
+################################################################################
+### PRIVATE VARS, for internal use
+### DEFINITELY READ ONLY!
+
+# has the user set a custom libs dest dir?
+IS_CUSTOM_LIBS_DIR=0
+
+# dependency formula subdir name
+DEPENDS_SUBDIR=_depends
+
+# local build root subdir name
+BUILDROOT_SUBDIR=_buildroot
+
+# paths relative to this script
+mkdir -p ${APOTHECARY_DIR}/build
+FORMULAS_DIR=$(realpath ${APOTHECARY_DIR}/formulas)
+BUILD_DIR=$(realpath ${APOTHECARY_DIR}/build)
+OF_ROOT=$(realpath ${APOTHECARY_DIR}/../../..)
+LIBS_DIR=$(realpath ${APOTHECARY_DIR}/../)
+ADDONS_DIR=$OF_ROOT/addons
+REL_ADDONS_DIR=$OF_ROOT/addons
+echo "OF: $OF_ROOT/"
+echo "APOTHECARY: $APOTHECARY_DIR"
+echo "FORMULAS: $FORMULAS_DIR"
+echo "BUILD: $BUILD_DIR"
+echo "LIBS_DIR: $LIBS_DIR"
+echo "ADDONS: $ADDONS_DIR"
+echo "REL_ADDONS_DIR: $REL_ADDONS_DIR"
+
+CHECKOUT=YES
+
+
+# ansi console escape codes
+CON_DEFAULT="\033[0m"
+CON_BOLD="\033[1m"
+CON_RED="\033[31m"
+CON_YELLOW="\033[33m"
+CON_GREEN="\033[32m"
+
+# used to filter out bad build types
+VALID_TYPES=( "osx" "linux" "linux64" "linuxarmv6l" "linuxarmv7l" "linuxaarch64" "vs" "msys2" "ios" "tvos" "android" "emscripten" )
+
+# verbose mode bool
+A_VERBOSE=0
+
+# If formula already exists force download
+FORCE_DOWNLOAD=0
+
+# prefer git instead of download tarballs
+# This remains _UNSET_ if git is not in use.
+# To use, set USE_GIT=1
+USE_GIT=
+
+# by default assume visual studio pro
+# -x changes to visual studio express
+VS_BUILD_TOOL=devenv
+
+VS_TYPE=Community
+
+# nice, detailed help message
+HELP="usage: apothecary [options] <command> [<core|addons|libName|addonName>]
+
+about:
+ this is the OpenFrameworks library apothecary
+  it mixes formulas and potions to build and
+  update OF C/C++ lib dependencies
+
+commands:
+  update	download, build, and copy library files
+  download	download the library source
+  prepare	prepare the library source for building
+  build		build the library
+  copy		copy library files into the libs dir
+  clean		clean the library build
+  remove	remove the library from the build cache
+  remove-lib	remove the library from the libs dir
+  remove-all	remove the library from the build cache and libs dir
+
+options:
+  -t	specify libary type when building, detects type from OS by default
+	valid types: osx, linux, linux64, linuxarmv6l, linuxarmv7l, vs, msys2, ios, tvos, android
+
+  -a	specify architecture, either 32 or 64 (default is 32 bit)
+	note: not currently needed, reserved for future use
+
+  -b	set the lib build dir, default: \$APOTHECARY_DIR/build
+
+  -d	set the compiled libs destination dir,
+  	default: OF core libs dir or addons/addonName/libs for addons
+
+  -v	verbose mode, print out some extra info while mixing formulas
+
+  -g	prefer git to download if available
+
+  -s	specify the git-tag to select another version of the library
+	note: availible only with git option
+
+  -f    force download even if build folder already exists
+
+  -e    use visual studio enterprise instead of community 
+
+  -p 	dont build dependencies
+
+  -h	print this usage guide
+
+examples:
+  # update all core libs and addon libs
+  apothecary update core addons
+
+  # update only glew
+  apothecary update glew
+
+  # remove all downloaded core lib src dirs from the build cache
+  apothecary remove core
+
+  # remove only assimp & glew from the cache
+  apothecary remove assimp glew
+
+  # remove glew from the build cache and libs dir
+  apothecary remove-all glew
+
+  # update freetype for ios
+  apothecary -t ios freetype
+
+  # update assimp for 64bit OSX (maybe in the future ...)
+  apothecary -t osx -a 64 assimp
+
+  # update assimp in the ofxAssimpModelLoader addonFormula
+  apothecary update ofxAssimpModelLoader
+
+  # update a formula script manually and set build and lib dest dirs
+  apothecary -b ../build -d ../libs path/to/formula.sh
+
+  # clean freetype via git and switch version to VER-2-5-0
+  apothecary -g -s VER-2-5-0 clean freetype
+
+  # update core dependencies
+  apothecary update depends
+"
+
+################################################################################
+#### SET ERROR HANDLING
+
+#set -x # run script in debug mode
+
+set -o pipefail  # trace ERR through pipes
+set -o errtrace  # trace ERR through 'time command' and other functions
+set -o nounset   # set -u : exit the script if you try to use an uninitialized variable
+set -o errexit   # set -e : exit the script if any statement returns a non-true return value
+
+# trap the killer signals so that we can exit with a good message
+trap "trapSignal SIGHUP" SIGHUP
+trap "trapSignal SIGINT" SIGINT
+trap "trapSignal SIGTERM" SIGTERM
+
+trapSignal() {
+	echo
+	echoError " Received signal $1"
+	exit 1
+}
+
+# trap any script errors and exit
+trap "trapError" ERR
+
+trapError() {
+	echo
+	echoError " ^ Received error ^"
+	exit 1
+}
+
+# console printing functions (with color)
+echoError()		{
+	echo -e "$CON_BOLD$CON_RED$1$CON_DEFAULT"
+}
+echoWarning()	{
+	echo -e "$CON_BOLD$CON_YELLOW$1$CON_DEFAULT"
+}
+echoInfo()		{
+	echo -e "$CON_BOLD$1$CON_DEFAULT"
+}
+echoSuccess()	{
+	echo -e "$CON_BOLD$CON_GREEN$1$CON_DEFAULT"
+}
+echoVerbose() {
+	if [ $A_VERBOSE == 1 ] ; then
+		echoInfo "$1"
+	fi
+}
+
+################################################################################
+#### PARSE COMMANDLINE
+
+# from http://www.mkssoftware.com/docs/man1/getopts.1.asp
+while getopts t:a:b:d:s:j:hgvfpe opt ; do
+	case "$opt" in
+		t) # set the library build type
+		   TYPE="$OPTARG" ;;
+		a) # set the architecture
+		   ARCH=$OPTARG ;;
+		b) # set the build dir
+		   BUILD_DIR="$(realpath \"$OPTARG\")" ;;
+		d) # set lib destination dir
+		   LIBS_DIR="$OPTARG"; IS_CUSTOM_LIBS_DIR=1 ;;
+		s) # set the git tag to switch version
+		   SWITCH_VER="$OPTARG" ;;
+		j) # set the -j parameter for make
+		   PARALLEL_MAKE="$OPTARG" ;;
+		g) # set git usage
+		   USE_GIT=1 ;;
+		h) # print help and exit
+		   echo "$HELP" ; exit 0 ;;
+		v) # verbose mode = true
+		   A_VERBOSE=1 ;;
+		e) # use visual enterprise
+		   VS_TYPE=Enterprise ;;
+        f) # force download
+           FORCE_DOWNLOAD=1 ;;
+		p) # Dont build dependencies
+           BUILD_DEPENDENCIES=0 ;;
+		[?]) # print help and exit
+			echo "$HELP" ; exit 0 ;;
+	esac
+done
+shift $(( $OPTIND - 1))
+
+# used when building for vs - set to 15 if not set explicitly
+if [ "$TYPE" = "vs" ]; then
+    if [ -z ${VS_VER+x} ]; then
+	    echo "VS_VER was not set - setting to 15"
+	    VS_VER=15
+    else
+	    echo "VS_VER is set to '$VS_VER'"
+    fi
+
+    VS_64_BIT_ENV='VC\vcvarsall'
+
+    if [ -z ${PLATFORM+x}]; then
+        if [ $ARCH == 32 ]; then
+            PLATFORM=x86
+        elif [ $ARCH == 64 ]; then
+            PLATFORM=x64
+        fi
+
+        echo "PLATFORM set to '$PLATFORM', ${PLATFORM}_${VS_VER}"
+    fi
+    
+    VS_YEAR=2019
+    VS_BAT="vcvarsall.bat"
+    if [ -z ${VS_BASE_PATH+x} ]; then
+        if [ "${VS_VER}" = "15" ]; then
+            VS_BASE_PATH="/c/Program Files (x86)/Microsoft Visual Studio/2017/$VS_TYPE"
+            VS_YEAR=2017
+            VS_BAT="vcvars$ARCH.bat"
+        elif [ "${VS_VER}" = "16" ]; then
+            VS_BASE_PATH="/c/Program Files (x86)/Microsoft Visual Studio/2019/$VS_TYPE"
+            VS_YEAR=2019
+        elif [ "${VS_VER}" = "17" ]; then
+          VS_BASE_PATH="/c/Program Files/Microsoft Visual Studio/2022/$VS_TYPE"
+          VS_YEAR=2022
+        fi
+    fi
+	
+	VS_VARS_PATH=$(cygpath -wa "$VS_BASE_PATH/VC/Auxiliary/Build/$VS_BAT")
+
+	export VS_BASE_PATH; 
+	export VS_VARS_PATH;
+  export VS_YEAR;
+
+    if [ -z ${VS_BIN_PATH+x} ]; then	            
+		VS_VER_DIR=$(ls "$VS_BASE_PATH/VC/Tools/MSVC/" | tail -1)
+        VS_BIN_PATH="$VS_BASE_PATH/VC/Tools/MSVC/$VS_VER_DIR/bin/Host$PLATFORM/$PLATFORM"
+
+		export PATH=$VS_BIN_PATH:$PATH
+
+        (
+        	# with parentheses we open a new sub-shell scope to make sure we're not overwriting any presets for IFS
+	        # set input field separator to colon (:) for current scope
+	        IFS=:
+	        for vs_bin_directory in ${VS_BIN_PATH}; do
+	        	# we must make sure each given directory exists
+	 	        if [ ! -d ${vs_bin_directory} ]; then
+	    	        echo "Couldn't confirm Visual Studio path exists: '$vs_bin_directory', probably installed on a non standard location?"
+	        	    exit 1
+	        	else
+	        		echo "Confirmed VS_BIN_PATH element exists: '${vs_bin_directory}'"
+		        fi
+
+	        done
+        )
+
+        echo "VS_BIN_PATH was not set - setting to $VS_BIN_PATH"
+
+        # Test for existence of directory where cmake should live
+        # then prepend cmake path to PATH
+        if [ -d "/c/Program Files/CMake/bin/" ]; then
+            export PATH="/c/Program Files/CMake/bin/:$PATH"
+        fi
+    fi
+fi
+
+# get command
+if [ $# -gt 0 ] ; then
+	A_CMD=$1
+else
+	echoWarning " Missing command. See help: 'apothecary -h'."
+	exit 1
+fi
+shift 1
+
+# check for arguments
+if [ $# -lt 1 ] ; then
+	echoWarning " Missing lib build target (maybe you wanted \"core\"). See help: 'apothecary -h'."
+	exit 1
+fi
+
+ if [ "$TYPE" == "vs" ]; then
+
+ 	# At this point we assume that $PATH begins with "/usr/local/bin:/usr/bin:/bin:/opt/bin:", which
+ 	# means that the bash environment will take precedence over windows build tools - this can lead
+ 	# to some name-clashes, esp. with `link` for example, which has the same name, but might either
+ 	# be the microsoft linker, or the gcc linker bundled with mingw. In most cases, the microsoft
+ 	# build tools will be preferred, and we therefore need to make sure that the ms build tools occur
+ 	# earlier in $PATH.
+ 	#
+ 	# We prepend the ms build tools path via a special environment variable which we receive via
+ 	# `appveyor.yml`: `VS_BIN_PATH`, which is set in the `init:` step
+
+	export PATH="$VS_BIN_PATH:$PATH"
+
+ fi
+
+################################################################################
+### FUNCTIONS
+
+function installAndroidToolchain() {
+
+	local WD=$(pwd)
+
+	if [ ! -d $ANDROID_NDK_ROOT/build/tools ]; then
+		echoError "ANDROID_NDK_ROOT not defined, please configure paths.make in this folder or ../projects/android/paths.make"
+		exit 1
+	fi
+
+
+	cd $ANDROID_NDK_ROOT/build/tools
+
+	local HOST=$(${BUILD_DIR}/../ostype.sh)
+
+	if [ "${HOST}" == "linux" ]; then
+	    ANDROID_HOST="linux-x86"
+	elif [ "${HOST}" == "linux64" ]; then
+	    ANDROID_HOST="linux-x86_64"
+	elif [ "${HOST}" == "osx" ]; then
+	    ANDROID_HOST="Darwin"
+	else
+	    echoError "Building for android only supported on linux and osx by now"
+	    exit 1
+	fi
+
+	if [ "$ARCH" == "armv7" ]; then
+		if [ ! -d "$BUILD_DIR/Toolchains/Android/armv7" ]; then
+			echo $PWD
+			./make_standalone_toolchain.py \
+				--install-dir=$BUILD_DIR/Toolchains/Android/$ARCH \
+				--arch=arm \
+				--api $ANDROID_API \
+				--stl=libc++
+		fi
+	elif [ "$ARCH" == "arm64" ]; then
+		if [ ! -d "$BUILD_DIR/Toolchains/Android/arm64" ]; then
+			./make_standalone_toolchain.py \
+				--install-dir=$BUILD_DIR/Toolchains/Android/$ARCH \
+				--arch=arm64 \
+				--api $ANDROID_API \
+				--stl=libc++
+		fi
+	elif [ "$ARCH" == "x86" ]; then
+		if [ ! -d "$BUILD_DIR/Toolchains/Android/x86" ]; then
+			./make_standalone_toolchain.py \
+				--install-dir=$BUILD_DIR/Toolchains/Android/$ARCH \
+				--arch=x86 \
+				--api $ANDROID_API \
+				--stl=libc++
+		fi
+	fi
+
+	cd $WD
+
+}
+
+# check if a given string matches anything in VALID_TYPES,
+# bool result is set to second argument
+function isValidType() {
+	local i
+	for i in "${VALID_TYPES[@]}" ; do
+		if [ "$i" == "$1" ] ; then
+			eval $2=1
+			return
+		fi
+	done
+	eval $2=0
+}
+
+# check if a given string matches anything in FORMULA_TYPES,
+# bool result is set to second argument
+function isFormulaType() {
+	local i
+	for i in "${FORMULA_TYPES[@]}" ; do
+		if [ "$i" == "$1" ] ; then
+			eval $2=1
+			return
+		fi
+	done
+	eval $2=0
+}
+
+# checks if a given formula string is a forumla script or exists in the formulas dir,
+# exits with error on failure, sets formula script and parent dir on success
+#
+# sets isAddon arg if given string is an addon in the addons dir, script & parent dir
+# will be empty if the addon does not contain any formulas
+#
+# args: formula string, formula script, formula script parent dir, isAddon bool, isDepend bool
+function checkFormula() {
+	local script
+	local parentDir
+
+	# is given formula an existing script?
+	if [ -e $1 -a "${1##*.}" == "sh" ] ; then
+		local path=$1
+		case $1 in
+			/*) : ;; # absolute path
+			 *) path=$WD/$1 ;; # relative path
+		esac
+		script=$(basename $path)
+		parentDir=$(dirname $path)
+
+	# existing formula dir with script?
+	elif [ -e $1 -a -d $1 -a -e $1/$1.sh ] ; then
+		local path=$1/$1.sh
+		case $1 in
+			/*) : ;; # absolute path
+			 *) path=$WD/$1/$1.sh ;; # relative path
+		esac
+		script=$(basename $path)
+		parentDir=$(dirname $path)
+
+	# is the given formula name a script in the formulas dir?
+	elif [ -e $FORMULAS_DIR/$1.sh ] ; then
+		script=$1.sh
+		parentDir=$FORMULAS_DIR
+
+	# is the given formula name a dir in the formulas dir?
+	elif [ -e $FORMULAS_DIR/$1 -a -d $FORMULAS_DIR/$1 ] ; then
+		script=$1.sh
+		parentDir=$FORMULAS_DIR/$1
+
+	# is the given formula name a script in the depends formulas dir?
+	elif [ -e $FORMULAS_DIR/$DEPENDS_SUBDIR/$1.sh ] ; then
+
+		echoVerbose " Detected dependency: \"$1\""
+
+		script=$1.sh
+		parentDir=$FORMULAS_DIR
+
+		eval $5=1
+
+	# is the given formula name an addon in the addons dir?
+	elif [ -e $REL_ADDONS_DIR/$1 ] ; then
+
+		echoVerbose " Detected addon: \"$1\""
+
+		# are there formulas in the addon formulas dir?
+		if [ -e $REL_ADDONS_DIR/$1/scripts/formulas ] ; then
+			script=
+			parentDir=$REL_ADDONS_DIR/$1/scripts/formulas
+		else
+			script=
+			parentDir=""
+		fi
+		eval $4=1
+
+	else
+		echoError " No formula for lib \"$1\""
+		exit 1
+	fi
+
+	#echoVerbose " checkFormula script: $script"
+	#echoVerbose " checkFormula script parent dir: $parentDir"
+	eval $2=$script
+	eval $3=$parentDir
+}
+
+# execute a given command on a formula and/or formulas,
+# checks and sources formula scripts before running based on first arg:
+# $1 = bool, should source this formula
+# $2 = command
+# $3 = "core", "addons", list of library/addon names, script file to run, etc
+function doCommand() {
+
+	local shouldSource=$1
+	local cmd=$2
+	shift 2
+
+	# process given lib targets
+	while [ $# -gt 0 ] ; do
+
+		# process all formulas in formulas dir, ignore depends subdir
+		if [ "$1" == "core" ] ; then
+			local formula
+			for formula in $( ls -1 $FORMULAS_DIR | grep -v $DEPENDS_SUBDIR) ; do
+				doCommand $shouldSource $cmd "${formula%.*}" # remove extension
+			done
+
+		# process all addons in the addons dir
+		elif [ "$1" == "addons" ] ; then
+			local addon
+			for addon in $(ls -1 $REL_ADDONS_DIR) ; do
+				if [ -d $REL_ADDONS_DIR/$addon ] ; then
+					doCommand $shouldSource $cmd $addon
+				fi
+			done
+
+		# process all formulas in the dependencies dir
+		elif [ "$1" == "depends" ] ; then
+			local depend
+			for depends in $( ls -1 $FORMULAS_DIR/$DEPENDS_SUBDIR) ; do
+				doCommand $shouldSource $cmd "${depend%.*}" # remove extension
+			done
+
+		else # process given lib, addon, or dependency
+
+			local formula
+			local isAddon=0
+			local isDepend=0
+			checkFormula $1 formula FORMULA_DIR isAddon isDepend
+
+			# an addon
+			if [ $isAddon == 1 ] ; then
+				local tmpLibsDir=$LIBS_DIR
+
+				# are there formulas in the addon formulas dir?
+				if [ "$FORMULA_DIR" != "" ] ; then
+
+					# set libs dest dir to addon/libs if it hasn't been manually set
+					if [ $IS_CUSTOM_LIBS_DIR == 0 ] ; then
+						LIBS_DIR=$ADDONS_DIR/$1/libs
+					fi
+
+					# process all formulas in scripts/formulas
+					local addonFormula
+					for addonFormula in $( ls -1 $FORMULA_DIR) ; do
+						# is the file in the directory a valid formula extension
+						if [ -e $FORMULA_DIR -a "${addonFormula##*.}" == "sh" ] ; then
+							doCommand $shouldSource $cmd $FORMULA_DIR/$addonFormula
+						else
+							echoVerbose "Unknown formula extension '$addonFormula' with extension: ${addonFormula##*.}"
+						fi
+					done
+
+					# back to default
+					if [ $IS_CUSTOM_LIBS_DIR == 0 ] ; then
+						LIBS_DIR=$tmpLibsDir
+					fi
+				else
+					echoInfo " Skipping addon \"$1\": no formulas found"
+				fi
+
+			else # OF lib or dependency formula
+
+				# load a script & it's function implementations
+				if [ $shouldSource == 1 ] ; then
+					if [ $isDepend == 1 ] ; then
+						source $FORMULA_DIR/$DEPENDS_SUBDIR/$formula
+					else
+						source $FORMULA_DIR/$formula
+					fi
+				fi
+				formula=$(basename $1)
+				local currentLib="${formula%.*}"
+
+				if [ $shouldSource == 1 ] ; then
+					# does this formula support the current build type?
+					local bFormulaType=0 # bool
+					isFormulaType $TYPE bFormulaType
+					if [ $bFormulaType == 0 ] ; then
+						echoInfo " Skipping \"$currentLib\": $cmd not needed for type \"$TYPE\""
+					else
+						# do command
+						$cmd $currentLib
+					fi
+				else
+					# do command
+					$cmd $currentLib
+				fi
+			fi
+		fi
+
+		shift 1
+
+		# reset to all types & depends
+		FORMULA_TYPES=("${VALID_TYPES[@]}") # copy array
+		FORMULA_DEPENDS=()
+
+	done
+}
+
+# update a given library
+function updateFormula() {
+
+	echo
+	echoInfo " ----- $1 -----"
+
+	# if [ -e $BUILD_DIR/$1 ] ; then
+	# 	cleanFormula $1
+	# fi
+	downloadFormula $1
+	prepareFormula $1
+	buildFormula $1
+	copyFormula $1
+
+	echo
+	echoSuccess " Finished \"$1\""
+}
+
+# download a given library into the build cache, arg is library name
+function downloadFormula(){
+
+	echo
+	echoInfo " Downloading \"$1\""
+	echoVerbose " Formula dir: $FORMULA_DIR"
+	echoVerbose " Formula build types: ${FORMULA_TYPES[*]}"
+	echoVerbose " Build dir: $BUILD_DIR"
+	echoVerbose " Depends formula dir: $DEPENDS_FORMULA_DIR"
+	if [ ${#FORMULA_DEPENDS[@]} -gt 0 ] ; then
+		echoVerbose " Dependencies: ${FORMULA_DEPENDS[*]}"
+	fi
+	echo
+
+	mkdir -p $BUILD_DIR
+	mkdir -p $BUILD_ROOT_DIR
+	cd $BUILD_DIR
+
+	if [ -e $1 ] ; then
+        if [ $FORCE_DOWNLOAD -eq 1 ]; then
+			echo "removing already existing $1"
+            rm -rf ${PWD}/${1}*
+        else
+            echo "... skipping, $1 src dir already exists in ${PWD}/${1}"
+        fi
+    fi
+
+	if [ ! -e $1 ] ; then
+	    if [ ! -z "$USE_GIT" ] && [[ "${GIT_URL:+x}" ]] ; then
+		    gitclone $1 $GIT_URL ${GIT_TAG:-master}
+	    else
+		    download $1
+	    fi
+
+	    if [ ! -d $BUILD_DIR/$1 ] ; then
+		    echoError " It looks like downloading failed for \"$1\""
+		    exit 1
+	    fi
+    fi
+
+
+	# dependencies
+	if [ $FORMULA_DEPENDS_MANUAL == 0 ] ; then
+		apothecaryDependencies download
+	fi
+
+	cd $APOTHECARY_DIR
+}
+
+# prepare a given library, arg is library name
+function prepareFormula() {
+
+	# run prepare command in src dir
+	echo
+	echoInfo " Preparing \"$1\""
+	echoVerbose " Lib src dir: $BUILD_DIR/$1"
+	echo
+
+	if [ ! -e $BUILD_DIR/$1 ] ; then
+		echoError " Lib src dir missing for \"$1\": $BUILD_DIR/$1"
+		echoError " Did you download the formula?"
+		exit 1
+	fi
+
+	cd $BUILD_DIR/$1
+
+	# dependencies
+	if [ $FORMULA_DEPENDS_MANUAL == 0 ] ; then
+		apothecaryDependencies prepare $1
+	fi
+
+	prepare $1
+
+	cd $APOTHECARY_DIR
+}
+
+# build a given library, arg is library name
+function buildFormula() {
+
+	# run build command in src dir
+	echo
+	echoInfo " Building \"$1\""
+	echoVerbose " Lib src dir: $BUILD_DIR/$1"
+	echo
+
+	if [ ! -e $BUILD_DIR/$1 ] ; then
+		echoError " Lib src dir missing for \"$1\": $BUILD_DIR/$1"
+		echoError " Did you download the formula?"
+		exit 1
+	fi
+
+	cd $BUILD_DIR/$1
+
+	# dependencies
+	if [ $FORMULA_DEPENDS_MANUAL == 0 ] ; then
+		apothecaryDependencies build
+		apothecaryDependencies copy
+	fi
+
+	build $1
+
+	cd $APOTHECARY_DIR
+}
+
+# copy a given library, arg is library name
+function copyFormula() {
+
+	# dest arg path relative to src dir
+	echo
+	echoInfo " Copying \"$1\""
+	echoVerbose " Lib src dir: $BUILD_DIR/$1"
+	echoVerbose " Lib dest dir: $LIBS_DIR/$1"
+	echo
+
+	if [ ! -e $BUILD_DIR/$1 ] ; then
+		echoError " Lib src dir missing for \"$1\": $BUILD_DIR/$1"
+		echoError " Did you download the formula?"
+		exit 1
+	fi
+
+	cd $BUILD_DIR/$1
+	copy $LIBS_DIR/$1
+	cd $APOTHECARY_DIR
+}
+
+# clean a given library, arg is library name
+function cleanFormula() {
+
+	# run build command in src dir
+	echo
+	echoInfo " Cleaning \"$1\""
+	echoVerbose " Lib src dir: $BUILD_DIR/$1"
+	echo
+
+	if [ ! -e $BUILD_DIR/$1 ] ; then
+		echoError " Lib src dir missing for \"$1\": $BUILD_DIR/$1"
+		echoError " Did you download the formula?"
+		exit 1
+	fi
+
+	cd $BUILD_DIR/$1
+	if  [ ! -z "$USE_GIT" ] && [ -d $BUILD_DIR/$1/.git ] ; then
+		git clean -d -f -q -x
+		git reset -q --hard HEAD
+		if [[ ${SWITCH_VER:+x} ]]; then
+			echoVerbose " Switching version (to $SWITCH_VER)"
+			{
+                git checkout $SWITCH_VER
+            } || {
+			    echoInfo " Local version missing. Fetching distant changes..."
+            	git fetch origin
+                git checkout $SWITCH_VER
+            }
+		fi
+	else
+
+		# dependencies
+		if [ $FORMULA_DEPENDS_MANUAL == 0 ] ; then
+			apothecaryDependencies clean
+		fi
+
+		clean
+	fi
+	cd $APOTHECARY_DIR
+}
+
+# remove a given library from the cache
+function remove() {
+
+	echoVerbose " Lib src dir: $BUILD_DIR/$1"
+	cd $BUILD_DIR
+	if [ ! -e $1* ] ; then
+		echoVerbose " Nothing to remove from build cache: \"$1\""
+	else
+		rm -rf $1*
+		echoSuccess " Removed from build cache: \"$1\""
+	fi
+
+	# dependencies
+	apothecaryDependencies remove
+
+	cd $APOTHECARY_DIR
+}
+
+# remove a given library from the lib dir
+function remove-lib() {
+
+	echoVerbose " Libs dest dir: $LIBS_DIR"
+	cd $LIBS_DIR
+	if [ ! -e $1 ] ; then
+		echoVerbose " Nothing to remove from lib dest dir: \"$1\""
+	else
+		rm -rf $1
+		echoSuccess " Removed from lib dest dir: \"$1\""
+	fi
+
+	# dependencies
+	apothecaryDependencies remove-lib
+
+	cd $APOTHECARY_DIR
+}
+
+# remove a given library from the cache and lib dir
+function remove-all() {
+	remove $1
+	remove-lib $1
+}
+
+# git-clone a given library
+function gitclone() {
+	{
+		echoVerbose " Try using Git to download"
+		git clone $2 $1
+		cd $1
+		if [[ ${SWITCH_VER:+x} ]]; then
+			echoVerbose " Select a custom version ($SWITCH_VER)"
+			git checkout $SWITCH_VER
+		else
+			git checkout $3
+		fi
+		cd ..
+	} || {
+		echoError " Git cloning fails, try default download"
+	}
+}
+
+function with_vs_env(){
+	
+    #2019 and onwards we need to pass the platform as the arg
+    if [ $VS_VER -gt 15 ] ; then
+		# we want to make sure that the build command is called with the correct environment variables set up
+		# we achieve this by piping all commands into a .bat file and then calling this temporary .bat file.
+
+		echo "" > with_env.bat # cleanup temporary bat file
+		echo "call \"$VS_VARS_PATH\" $PLATFORM && $@" >> with_env.bat
+		cmd.exe //C "call with_env.bat"
+    elif [ $VS_VER == 15 ] ; then
+		# we want to make sure that the build command is called with the correct environment variables set up 
+		# we achieve this by piping all commands into a .bat file and then calling this temporary .bat file.
+
+		echo "" > with_env.bat # cleanup temporary bat file
+		echo "call \"$VS_VARS_PATH\" && $@" >> with_env.bat
+		cmd.exe //C "call with_env.bat"
+	else
+		#statements
+		if [ $ARCH == 32 ] ; then
+			cmd.exe \/c "call \"%VS${VS_VER}0COMNTOOLS%vsvars32.bat\" && $@"
+		elif [ $ARCH == 64 ] ; then
+	        cmd.exe \/c "call \"%VS${VS_VER}0COMNTOOLS%..\\..\\${VS_64_BIT_ENV}\" amd64 && $@"
+		fi
+	fi
+}
+
+# visual studio builder
+# args: <"path/to/sol.sln"> [action] [config]
+# example: vs-build "./tess2.sln" Build Debug
+# http://msdn.microsoft.com/library/vstudio/b20w810z.aspx
+function vs-build() {
+
+	if [ $VS_VER -gt 14 ] ; then
+
+		echo "-- Searching for vs-build"
+		# vswhere is a utility to find the most recent vs compiler toolchain. it is
+		# assumed to be installed at a fixed location
+
+		# assumed to be installed at a fixed location
+ 		if [ $VS_VER == 15 ] ; then
+ 			VSWHERE_EXE=`cmd.exe //c "echo %ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"`
+ 		elif [ $VS_VER == 16 ] ; then
+ 			VSWHERE_EXE=`cmd.exe //c "echo %ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"`
+ 		elif [ $VS_VER -gt 17 ] ; then
+ 			VSWHERE_EXE=`cmd.exe //c "echo %ProgramFiles%\Microsoft Visual Studio\Installer\vswhere.exe"`
+ 		else
+ 			VSWHERE_EXE=`cmd.exe //c "echo %ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"`
+		fi
+
+
+		echo "-- Found vswhere: ${VSWHERE_EXE}"
+		# vswhere allows us to query the install dir of the ms build tools
+		VS_INSTALL_PATH=`cmd //c "${VSWHERE_EXE}" -latest -products Microsoft.VisualStudio.Product.${VS_TYPE} -requires Microsoft.VisualStudio.Component.VC.CoreIde -property installationPath`
+		echo "-- Found vs install path: ${VS_INSTALL_PATH}"
+		# msbuild is the tool used to build visual studio solutions
+		MSBUILD_PATH="${VS_INSTALL_PATH}\MSBuild\\${VS_VER}.0\Bin\MSBuild.exe"
+		echo "-- Found MSBuild path: ${MSBUILD_PATH}"
+
+		# define fallback build selection if vs-build was not called with enough parameters.
+		if [ $ARCH == 32 ] ; then
+			DEFAULT_BUILD="Release|Win32"
+		elif [ $ARCH == 64 ] ; then
+			DEFAULT_BUILD="Release|x64"
+		fi
+
+		# Cut part before '|' character of third parameter (which defaults to "Default|x64") and store it as BUILD_CONFIGURATION
+		BUILD_CONFIGURATION="$( cut -d '|' -f 1 <<< "${3:-$DEFAULT_BUILD}" )"
+		BUILD_CONFIGURATION=$BUILD_CONFIGURATION
+		# Cut part after '|' character of third parameter (which defaults to "Default|x64") and store it as BUILD_PLATFORM
+		BUILD_PLATFORM="$( cut -d '|' -f 2- <<< "${3:-$DEFAULT_BUILD}" )"
+		BUILD_PLATFORM=$BUILD_PLATFORM
+
+		echo "-- Build platform: $BUILD_PLATFORM"
+		echo "-- Build configuration: $BUILD_CONFIGURATION"
+
+		BUILD_EXEC="\"MSBuild.exe\" \"$1\" /t:${2:-Build} /p:Platform=\"$BUILD_PLATFORM\" /p:Configuration=\"$BUILD_CONFIGURATION\""
+		echo "-- Build parameters: $BUILD_EXEC"
+
+		# we need to add some extra outer quotes, since cmd.exe will only remove the outermost quotes and we might
+		# have some quotes inside the command.
+        with_vs_env "$BUILD_EXEC"
+
+	else
+		#statements
+        BUILD_EXEC="$VS_BUILD_TOOL $1 /${2:-Build} \"${3:-Release}\""
+        with_vs_env "$BUILD_EXEC"
+	fi
+
+}
+
+# visual studio upgrader
+# http://msdn.microsoft.com/en-us/library/vstudio/w15a82ay(v=vs.110).aspx
+function vs-upgrade() {
+	echo "-- vs-upgrade()"
+
+	if [ $VS_VER -gt 14 ] ; then
+		echo "-- Searching for devenv"
+		# vswhere is a utility to find the most recent vs compiler toolchain. it is
+		# assumed to be installed at a fixed location
+		VSWHERE_EXE=`cmd.exe //c "echo %ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"`
+		echo "-- Found vswhere: ${VSWHERE_EXE}"
+		# vswhere allows us to query the install dir of the ms build tools
+		VS_IDE_INSTALL_PATH=`cmd //c "${VSWHERE_EXE}" -latest -products Microsoft.VisualStudio.Product.${VS_TYPE} -requires Microsoft.VisualStudio.Component.VC.CoreIde -property installationPath`
+		echo "-- Found vs ide install path: ${VS_IDE_INSTALL_PATH}"
+		# msbuild is the tool used to build visual studio solutions
+		DEVENV_PATH="${VS_IDE_INSTALL_PATH}\Common7\IDE\devenv.exe"
+		echo "-- Found devenv path: ${DEVENV_PATH}"
+
+		UPGRADE_EXEC="\"${DEVENV_PATH}\" $1 /Upgrade"
+		echo "-- Upgrade parameters: $UPGRADE_EXEC"
+
+		# we need to add some extra outer quotes, since cmd.exe will only remove the outermost quotes and we might
+		# have some quotes inside the command.
+        with_vs_env "$UPGRADE_EXEC"
+	else
+        with_vs_env "$VS_BUILD_TOOL $1 /Upgrade"
+	fi
+}
+
+# visual studio clean
+# http://msdn.microsoft.com/en-us/library/vstudio/w15a82ay(v=vs.110).aspx
+function vs-clean() {
+    with_vs_env $VS_BUILD_TOOL $1 /Clean Release
+    with_vs_env $VS_BUILD_TOOL $1 /Clean Debug
+}
+
+################################################################################
+### FORMULA SCRIPT FUNCTIONS
+
+# these are the only functions you should call from your formula directly
+
+# basic implementations of the formula script functions,
+# overrriden when sourcing a formula script
+
+function download() {
+	echoWarning " Download function not implemented"
+}
+function prepare() {
+	echoVerbose " Prepare function not implemented"
+}
+function build() {
+	echoWarning " Build function not implemented"
+}
+function copy() {
+	echoWarning " Copy function not implemented"
+}
+function clean() {
+	echoWarning " Clean function not implemented"
+}
+
+# do a command on a given dependency in a separate apothecary run
+# $1 = command
+# $2 = dependency name
+function apothecaryDepend() {
+	# Dont do anything if BUILD_DEPENDENCIES is false
+	if [ $BUILD_DEPENDENCIES == 0 ] ; then
+		return
+	fi
+
+    local ROOT=$PWD
+	local depend="${2%.*}" # removes extension
+
+	# detect if dependency is a main OF lib
+	if [ -f $FORMULAS_DIR/$depend.sh -o -d $FORMULAS_DIR/$depend ] ; then
+
+		# don't remove main OF libs if they are dependencies
+		if [ "$1" == "remove" -o "$1" == "remove-lib" -o "$1" == "remove-all" ] ; then
+			echoVerbose " ... skipping main lib dependency $depend"
+			return
+		fi
+
+	# a dependency
+	elif [ -f $DEPENDS_FORMULA_DIR/$depend.sh -o -d $DEPENDS_FORMULA_DIR/$depend ] ; then
+		: # noop
+
+	else
+		echoError " Cannot $1, no formula for dependency \"$depend\""
+		exit 1
+	fi
+
+	# Uses git IF the USE_GIT variable is set
+    if [ $FORCE_DOWNLOAD -eq 1 ]; then
+	    $APOTHECARY_SCRIPT -f -t $TYPE -a $ARCH -j$PARALLEL_MAKE ${USE_GIT:+-g} $1 $depend
+    else
+        $APOTHECARY_SCRIPT -t $TYPE -a $ARCH -j$PARALLEL_MAKE ${USE_GIT:+-g} $1 $depend
+    fi
+    cd $ROOT
+}
+
+# do a command on all formula dependencies in separate apothecary runs
+# $1 = command
+function apothecaryDependencies() {
+	if [ ${#FORMULA_DEPENDS[@]} -gt 0 ] ; then
+		for depend in "${FORMULA_DEPENDS[@]}" ; do
+
+            #store where we are
+            CUR_DIR=$(pwd)
+
+            #change back to APOTHECARY_DIR to run new script
+            cd $APOTHECARY_DIR
+            apothecaryDepend $1 $depend
+
+            #restore dir to where we are
+            cd $CUR_DIR
+		done
+
+        #also have to cd back to the APOTHECARY_DIR for the next commands to work
+        #cd $APOTHECARY_DIR
+	fi
+}
+
+function  dump_output() {
+	if [ -z "$BUILD_OUTPUT" ]; then
+		echo "BUILD_OUTPUT not set."
+	else
+		echo Tailing the last 500 lines of output:
+		tail -500 "$BUILD_OUTPUT"
+	fi
+}
+function  error_handler() {
+	echo ERROR: An error was encountered with the build.
+	dump_output
+	# nicely terminate the ping output loop
+	if [ -z "$PING_LOOP_PID" ]; then
+		echo "Loop PID not set."
+	else
+		kill $PING_LOOP_PID || true
+	fi
+
+    if [ $# -gt 0 ]; then
+	    JOB="$0"              # job name
+	else
+	    JOB=""
+	fi
+	if [ $# -gt 1 ]; then
+        LASTLINE="$1"         # line of error occurrence
+    else
+        LASTLINE=""
+    fi
+    if [ $# -gt 2 ]; then
+        LASTERR="$2"          # error code
+    else
+        LASTERR="1"
+    fi
+    echo "ERROR in ${JOB} : line ${LASTLINE} with exit code ${LASTERR}"
+
+	exit "${LASTERR}"
+}
+
+################################################################################
+### GO
+
+# record current working dir
+WD=$(pwd)
+
+# change to the dir of this script
+cd $(dirname $0)
+APOTHECARY_DIR=$(pwd)
+APOTHECARY_SCRIPT=$APOTHECARY_DIR/apothecary
+
+# set OS & build types
+HOST_OS=`./ostype.sh`
+if [ "$TYPE" == "" ] ; then
+	case "$HOST_OS" in
+		windows)
+			TYPE="vs" ;;
+		*)
+			TYPE=$HOST_OS ;;
+	esac
+fi
+FORMULA_TYPES=("${VALID_TYPES[@]}") # copy array
+echoVerbose "Valid build types: ${VALID_TYPES[*]}"
+
+# set xcode dev root on osx
+if [ "$HOST_OS" == "osx" ] ; then
+	XCODE_DEV_ROOT=$($XS) # Sets to path from Xcode Path
+	OSX_SDK_VER=$($OSX_LATEST_SDK) # sets to latest OSX SDK
+	IOS_SDK_VER=$($IOS_LATEST_SDK) # sets to latest iOS SDK
+fi
+
+# check if we have a valid build type
+typeIsValid=0 # bool
+isValidType $TYPE typeIsValid
+if [ $typeIsValid == 0 ] ; then
+	echoError " Invalid build type: \"$TYPE\""
+	exit 1
+fi
+echoVerbose "Build type: $TYPE"
+
+# check if we have a valid arch
+if [ $ARCH != 32 -a $ARCH != 64 -a $ARCH != armv7 -a $ARCH != arm64 -a $ARCH != x86 ] ; then
+	echoError " Invalid architecture: $ARCH"
+	exit 1
+fi
+echoVerbose "Architecture: $ARCH"
+
+echoVerbose "Build dir: $BUILD_DIR"
+
+# use default libs dir?
+if [ "$LIBS_DIR" == "" ] ; then
+	LIBS_DIR=$APOTHECARY_DIR/$REL_LIBS_DIR
+else # manually set
+	case $LIBS_DIR in
+		/*) : ;; # absolute path
+	 	*) LIBS_DIR=$WD/$LIBS_DIR ;; # relative path
+	esac
+	IS_CUSTOM_LIBS_DIR=1
+fi
+echoVerbose "Libs dest dir: $LIBS_DIR"
+if [ ! -e $LIBS_DIR ] ; then
+	mkdir -p $LIBS_DIR
+	echoInfo "Created libs dest dir: $LIBS_DIR"
+fi
+
+# dependency & build root dirs
+DEPENDS_FORMULA_DIR=$FORMULAS_DIR/$DEPENDS_SUBDIR
+BUILD_ROOT_DIR=$BUILD_DIR/$BUILDROOT_SUBDIR
+
+# set for android sdk info
+# set for android sdk info
+if [[ "$TYPE" == "android" ]] ; then
+	if [[ -e ${APOTHECARY_DIR}/paths.make ]] ; then
+		source ${APOTHECARY_DIR}/paths.make
+		ANDROID_NDK_ROOT=${NDK_ROOT}
+		echoVerbose "Android NDK root: $ANDROID_NDK_ROOT"
+	elif [[ -e ${OF_ROOT}/libs/openFrameworksCompiled/project/android/paths.make ]] ; then
+		source $OF_ROOT/libs/openFrameworksCompiled/project/android/paths.make
+		ANDROID_NDK_ROOT=${NDK_ROOT}
+		echoVerbose "Android NDK root: $ANDROID_NDK_ROOT"
+	elif [[ -e ${NDK_ROOT} ]]; then
+		ANDROID_NDK_ROOT=${NDK_ROOT}
+	else
+		echoError "Targeting android, but can't find the SDK. Missing"
+		echoError "paths.make in apothecary folder or"
+		echoError "projects/android/paths.make in OF folder"
+		exit 1
+	fi
+	if [ "$ARCH" == "armv7" ]; then
+		echo setting arch to armv7
+		ABI=armeabi-v7a
+	elif [ "$ARCH" == "arm64" ]; then
+		ABI=arm64-v8a
+	elif [ "$ARCH" == "x86" ]; then
+		ABI=x86
+	fi
+fi
+
+CROSSCOMPILING=0
+if [ "$TYPE" == "linuxarmv6l" ] || [ "$TYPE" == "linuxaarch64" ] || [ "$TYPE" == "linuxarmv7l" ]; then
+    if [[ $(uname -m) != armv* ]]; then
+        CROSSCOMPILING=1
+        if [ -z $TOOLCHAIN_PREFIX ]; then
+            export TOOLCHAIN_PREFIX=arm-linux-gnueabihf
+        fi
+        if [ -z $SYSROOT ]; then
+            echoError Trying to cross compile but SYSROOT environment variable is not set
+            echoError Should be set to root of target OS image
+            exit 1
+        fi
+        if [ -z $TOOLCHAIN_ROOT ]; then
+            echoWarning Trying to cross compile but TOOLCHAIN_ROOT not set
+            echoWarning Trying to continue in case PATH is set to correct toolchain
+            echoWarning If compiling fails try setting TOOLCHAIN_ROOT to root of cross compiler toolchain
+        fi
+    fi
+fi
+
+# handle commands
+echoVerbose "Running: $A_CMD $*"
+case "$A_CMD" in
+
+	update)
+		doCommand 1 updateFormula $@ ;;
+
+	download)
+		doCommand 1 downloadFormula $@ ;;
+
+	prepare)
+		doCommand 1 prepareFormula $@ ;;
+
+	build)
+		doCommand 1 buildFormula $@ ;;
+
+	copy)
+		doCommand 1 copyFormula $@ ;;
+
+	clean)
+		doCommand 1 cleanFormula $@ ;;
+
+	remove)
+		if [ ! -e $BUILD_DIR ] ; then
+			echoInfo " Nothing to remove"
+			exit 0
+		fi
+		doCommand 1 remove $@ ;;
+
+	remove-lib)
+		if [ ! -e $LIBS_DIR ] ; then
+			echoInfo " Nothing to remove"
+			exit 0
+		fi
+		doCommand 1 remove-lib $@ ;;
+
+	remove-all)
+		doCommand 1 remove-all $@ ;;
+
+	*)
+		echoError " Unknown command \"$A_CMD\""
+		exit 1 ;;
+esac
+
+exit 0

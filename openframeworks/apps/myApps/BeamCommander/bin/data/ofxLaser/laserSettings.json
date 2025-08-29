@@ -1,0 +1,53 @@
+{
+    "Laser": {
+        "CUSTOM_PARAMETERS": null,
+        "Canvas_grid_size": "20",
+        "Canvas_snap_to_grid": "1",
+        "Don't_calculate_disconnected": "0",
+        "Global_brightness": "0.2",
+        "Interface": null,
+        "Latency__ms_": "150",
+        "Use_alternative_zones": "0",
+        "Zone_grid_size": "20",
+        "Zone_snap_to_grid": "1",
+        "numLasers": "2",
+        "showCustomParametersWindow": "1",
+        "showLaserManagementWindow": "1",
+        "showLaserOutputSettingsWindow": "1"
+    },
+    "beamzones": {
+        "zoneidcontainer": {
+            "grouplabel": "",
+            "zonegroup": 0,
+            "zoneidobjects": null,
+            "zonetype": 0
+        }
+    },
+    "canvastarget": {
+        "zoneidcontainer": {
+            "canvas_height": 800.0,
+            "canvas_width": 800.0,
+            "grouplabel": "",
+            "zonegroup": 0,
+            "zoneidobjects": [
+                {
+                    "zoneidobject": {
+                        "inputzone": [
+                            0.0,
+                            0.0,
+                            800.0,
+                            800.0
+                        ],
+                        "zoneId": {
+                            "label": "",
+                            "type": 1,
+                            "zonegroup": 0,
+                            "zoneindex": 0
+                        }
+                    }
+                }
+            ],
+            "zonetype": 1
+        }
+    }
+}

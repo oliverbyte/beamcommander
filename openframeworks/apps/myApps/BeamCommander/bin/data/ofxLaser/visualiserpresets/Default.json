@@ -1,0 +1,9 @@
+{
+    "group": {
+        "Camera_FOV": "45",
+        "Camera_distance": "99",
+        "Camera_orbit": "0.442773, 1.17732",
+        "Orbit_centre_point": "0, 0, 0",
+        "label": "Default"
+    }
+}

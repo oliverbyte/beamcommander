@@ -1,0 +1,1 @@
+-Os -mtune=native -DNDEBUG -stdlib=libc++ -Wall -fexceptions -Werror=return-type -fpascal-strings -mmacosx-version-min=10.15 -fobjc-arc -D__MACOSX_CORE__ -x objective-c++ -std=c++17

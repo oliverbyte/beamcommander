@@ -1,0 +1,50 @@
+{
+    "cc": [
+        {
+            "cc": 51,
+            "centered": true,
+            "channel": 1,
+            "deadzone": 0.0,
+            "gamma": 1.0,
+            "invert": false,
+            "offset": 0.0,
+            "osc": "/laser/rainbow/speed",
+            "outMax": 1.0,
+            "outMin": -1.0,
+            "relative": false,
+            "scale": 1.0,
+            "step": 0.009999999776482582
+        },
+        {
+            "cc": 52,
+            "centered": false,
+            "channel": 1,
+            "deadzone": 0.0,
+            "gamma": 1.0,
+            "invert": false,
+            "offset": 0.0,
+            "osc": "/laser/rainbow/amount",
+            "outMax": 1.0,
+            "outMin": 0.0,
+            "relative": false,
+            "scale": 1.0,
+            "step": 0.009999999776482582
+        },
+        {
+            "cc": 53,
+            "centered": false,
+            "channel": 1,
+            "deadzone": 0.0,
+            "gamma": 1.0,
+            "invert": false,
+            "offset": 0.0,
+            "osc": "/laser/rainbow/blend",
+            "outMax": 1.0,
+            "outMin": 0.0,
+            "relative": false,
+            "scale": 1.0,
+            "step": 0.009999999776482582
+        }
+    ],
+    "notes": []
+}

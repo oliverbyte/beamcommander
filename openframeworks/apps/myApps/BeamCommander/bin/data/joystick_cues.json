@@ -1,1 +1,26 @@
-[]
+[
+    {
+        "button": 0,
+        "cueIndex": 3,
+        "joystick": 0,
+        "momentary": true
+    },
+    {
+        "button": 3,
+        "cueIndex": 4,
+        "joystick": 0,
+        "momentary": true
+    },
+    {
+        "button": 4,
+        "cueIndex": 26,
+        "joystick": 0,
+        "momentary": true
+    },
+    {
+        "button": 1,
+        "cueIndex": 24,
+        "joystick": 0,
+        "momentary": true
+    }
+]

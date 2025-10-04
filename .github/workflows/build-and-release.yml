@@ -80,9 +80,6 @@ jobs:
         cp LICENSE.md openframeworks-src-master/apps/myApps/BeamCommander/bin/BeamCommander-Release/
         cp DEVELOPER.md openframeworks-src-master/apps/myApps/BeamCommander/bin/BeamCommander-Release/
         
-        # Copy start.sh from BeamCommander project folder
-        cp openframeworks-src-master/apps/myApps/BeamCommander/start.sh openframeworks-src-master/apps/myApps/BeamCommander/bin/BeamCommander-Release/
-        
         # Copy demo files including the live demo video
         cp -R doc openframeworks-src-master/apps/myApps/BeamCommander/bin/BeamCommander-Release/ || echo "No doc folder found"
         

@@ -10,6 +10,10 @@ BeamCommander is a comprehensive laser control system that bridges OSC (Open Sou
 
 *Real-time laser control demonstration showing Open Stage Control interface integration with BeamCommander*
 
+![BeamCommander Live Demo](doc/BeamCommander_Live_Demo.gif)
+
+*Live performance demonstration with Akai APC40 MIDI controller and iPad (Open Stage Control browser UI) controlling laser effects in real-time*
+
 ## Quick Start (Users)
 
 ### Prerequisites

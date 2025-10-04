@@ -115,7 +115,7 @@ BeamCommander is a comprehensive laser control system that bridges OSC (Open Sou
 
 BeamCommander is built on modified versions of open-source frameworks:
 - **OpenFrameworks**: v0.12.0 (master branch, October 2023) - Modified for enhanced stability and build optimization
-- **ofxLaser**: v1.0 beta (May 2021) - Modified with joystick removal and ImGui safety improvements
+- **ofxLaser**: of_11.0.2 branch (legacy for OF 0.11.x) - Modified with joystick removal and ImGui safety improvements
 
 For detailed modification information, see `DEVELOPER.md`.
 
@@ -124,7 +124,7 @@ For detailed modification information, see `DEVELOPER.md`.
 BeamCommander incorporates multiple open-source components:
 - **BeamCommander application code**: MIT License
 - **OpenFrameworks v0.12.0**: MIT License  
-- **ofxLaser v1.0 beta**: Mozilla Public License 2.0
+- **ofxLaser of_11.0.2 branch**: MIT License
 
 See `LICENSE.md` for complete licensing information and third-party attributions.
 

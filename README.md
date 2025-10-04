@@ -16,49 +16,41 @@ BeamCommander is a comprehensive laser control system that bridges OSC (Open Sou
 
 ## Quick Start (Users)
 
+### How to Run BeamCommander
+
+1. **Download the Release Binary**
+   - Go to the [Releases](https://github.com/oliverbyte/beamcommander/releases) page
+   - Download the latest release for Mac
+   - Extract the downloaded archive
+
+2. **Run BeamCommander**
+   - Double-click `BeamCommander.app` or run it from terminal
+   - The application will start listening for OSC commands on UDP port 9000
+
+3. **Control Options**
+
+   **Option A: Akai APC40 MIDI Controller**
+   - Connect your Akai APC40 via USB
+   - Use physical knobs and buttons for tactile laser control
+   - See MIDI Controller Reference section below for button mappings
+
+   **Option B: Custom OSC Client**
+   - Use any OSC-compatible software or hardware
+   - Send commands to `localhost:9000` (or the machine's IP address)
+   - See OSC API Reference section below for complete command list
+
+   **Option C: Open Stage Control Web Interface**
+   - Install [Open Stage Control](https://openstagecontrol.ammd.net/) on your device
+   - Use the provided configuration files:
+     - `open-stage-control-server.config` - Server configuration
+     - `open-stage-control-session.json` - Touch interface layout
+   - Access the web interface from any device on your network
+
 ### Prerequisites
 - macOS 15.6.1 or later
-- [Open Stage Control](https://openstagecontrol.ammd.net/) application installed in `/Applications/`
-- Akai APC40 MIDI controller (optional but recommended)
 - Compatible laser DAC hardware (EtherDream, Helios, LaserDock/LaserCube)
-
-### Running the System
-
-1. **First Time Setup**
-   ```bash
-   ./build.sh    # Build the application (only needed once or after code changes)
-   ```
-
-2. **Start the System Components**
-   
-   **Option A: Start Both Components (Recommended)**
-   ```bash
-   # Terminal 1: Start BeamCommander server
-   ./start_server.sh
-   
-   # Terminal 2: Start web interface (in separate terminal)
-   ./start_open-stage-control.sh
-   ```
-   
-   **Option B: Start Only BeamCommander**
-   ```bash
-   ./start_server.sh    # Start just the laser control server
-   ```
-   
-   **Option C: Start Only Web Interface**
-   ```bash
-   ./start_open-stage-control.sh    # Start just the web control interface
-   ```
-
-2. **Connect Your Controllers**
-   - **Web Interface**: Open your browser to the displayed URL (typically `http://localhost:8080`)
-   - **MIDI Controller**: Connect your Akai APC40 via USB
-   - **Laser Hardware**: Connect your laser DAC via USB or Ethernet
-
-3. **Initial Setup**
-   - Launch the desktop app first to configure your laser zones and output mapping
-   - Use the ImGui interface to set up laser outputs and zone transformations
-   - Save your configuration - it will persist between sessions
+- Optional: Akai APC40 MIDI controller for physical control
+- Optional: Open Stage Control for web-based touch interface
 
 ### Control Methods
 

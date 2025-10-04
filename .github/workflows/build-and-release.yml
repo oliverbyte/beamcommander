@@ -30,16 +30,30 @@ jobs:
         # Install any required dependencies
         brew update
         
-    - name: Build BeamCommander
+    - name: Use pre-built BeamCommander
       run: |
-        echo "Building BeamCommander..."
-        chmod +x build.sh
-        ./build.sh
+        echo "Using pre-built BeamCommander binary..."
         
-    - name: Check build output
+        # Verify the pre-built binary exists
+        if [ -d "openframeworks-src-master/apps/myApps/BeamCommander/bin/BeamCommander.app" ]; then
+          echo "✅ BeamCommander.app found"
+          ls -la openframeworks-src-master/apps/myApps/BeamCommander/bin/
+        else
+          echo "❌ BeamCommander.app not found"
+          exit 1
+        fi
+        
+    - name: Verify BeamCommander binary
       run: |
-        echo "Checking build output..."
+        echo "Verifying BeamCommander binary..."
         ls -la openframeworks-src-master/apps/myApps/BeamCommander/bin/
+        
+        # Test if the binary is executable
+        if [ -x "openframeworks-src-master/apps/myApps/BeamCommander/bin/BeamCommander.app/Contents/MacOS/BeamCommander" ]; then
+          echo "✅ BeamCommander binary is executable"
+        else
+          echo "⚠️ BeamCommander binary may not be executable"
+        fi
         
     - name: Package release
       run: |

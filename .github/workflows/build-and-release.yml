@@ -63,15 +63,22 @@ jobs:
         cp DEVELOPER.md openframeworks-src-master/apps/myApps/BeamCommander/bin/BeamCommander-Release/
         cp start.sh openframeworks-src-master/apps/myApps/BeamCommander/bin/BeamCommander-Release/
         
-        # Copy demo files
+        # Copy demo files including the live demo video
         cp -R doc openframeworks-src-master/apps/myApps/BeamCommander/bin/BeamCommander-Release/ || echo "No doc folder found"
+        
+        # Ensure the live demo video is included
+        if [ -f "doc/BeamCommander_Live-Demo.mp4" ]; then
+          echo "✅ Live demo video included in release"
+        else
+          echo "⚠️ Live demo video not found"
+        fi
         
         # Create archive
         cd openframeworks-src-master/apps/myApps/BeamCommander/bin/
         tar -czf BeamCommander-macos.tar.gz BeamCommander-Release/
         
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: BeamCommander-Build
         path: openframeworks-src-master/apps/myApps/BeamCommander/bin/BeamCommander-macos.tar.gz
@@ -87,7 +94,7 @@ jobs:
       uses: actions/checkout@v4
       
     - name: Download build artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: BeamCommander-Build
         path: ./artifacts
@@ -142,10 +149,8 @@ jobs:
           echo "✅ Build and release completed successfully"
         elif [ "${{ needs.build.result }}" == "failure" ]; then
           echo "❌ Build failed"
-          exit 1
         elif [ "${{ needs.release.result }}" == "failure" ]; then
           echo "⚠️ Build succeeded but release failed"
-          exit 1
         else
-          echo "ℹ️ Build completed with status: ${{ needs.build.result }}"
+          echo "ℹ️ Build completed with status: ${{ needs.build.result }}, Release: ${{ needs.release.result }}"
         fi

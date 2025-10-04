@@ -17,8 +17,13 @@ BeamCommander is a comprehensive laser control system built on modified versions
 
 ### Dependencies and Modifications
 
-#### OpenFrameworks (Master Branch - Modified)
+#### OpenFrameworks v0.12.0 (Master Branch - Modified)
+**Base Version**: OpenFrameworks 0.12.0 (master branch as of October 2023)
 **Location**: `openframeworks-src-master/`
+**Version Details**: 
+- Core: v0.12.0 (OF_VERSION_MAJOR=0, OF_VERSION_MINOR=12, OF_VERSION_PATCH=0)
+- Branch: master with "master" pre-release tag
+- Integration Date: ~October 2023
 **Modifications**:
 - Architecture compatibility fixes for ARM64/x86_64
 - Build system optimization for parallel compilation
@@ -27,8 +32,15 @@ BeamCommander is a comprehensive laser control system built on modified versions
 
 **Why Bundled**: Core framework modifications required for stable ImGui integration and build optimization cannot be achieved through standard addon approaches.
 
-#### ofxLaser v0.1.0 Beta (Modified)
+#### ofxLaser of_11.0.2 Branch (Modified)
+**Base Version**: ofxLaser of_11.0.2 branch (legacy version for OpenFrameworks v0.11.x)
+**Original Source**: https://github.com/sebleedelisle/ofxLaser/tree/of_11.0.2
+**License**: MIT License (Copyright (c) 2012-2019 Seb Lee-Delisle)
 **Location**: `openframeworks-src-master/addons/ofxLaser/`
+**Version Details**:
+- Branch: of_11.0.2 (legacy branch for OF 0.11.x compatibility)
+- Features: Core laser control, DAC support, shape optimization, multi-laser management
+- Integration Date: Based on of_11.0.2 branch, integrated with BeamCommander modifications
 **Major Modifications**:
 - **Joystick Support Removal**: Complete elimination of ofxJoystick dependencies
   - Removed all `HAVE_OFXJOYSTICK` conditional compilation

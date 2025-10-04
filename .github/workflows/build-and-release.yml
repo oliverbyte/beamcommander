@@ -1,0 +1,151 @@
+name: Build and Release BeamCommander
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+        
+    - name: Install dependencies
+      run: |
+        # Install any required dependencies
+        brew update
+        
+    - name: Build BeamCommander
+      run: |
+        echo "Building BeamCommander..."
+        chmod +x build.sh
+        ./build.sh
+        
+    - name: Check build output
+      run: |
+        echo "Checking build output..."
+        ls -la openframeworks-src-master/apps/myApps/BeamCommander/bin/
+        
+    - name: Package release
+      run: |
+        echo "Packaging release..."
+        cd openframeworks-src-master/apps/myApps/BeamCommander/bin/
+        
+        # Create release directory structure
+        mkdir -p BeamCommander-Release
+        
+        # Copy the built application
+        if [ -d "BeamCommander.app" ]; then
+          cp -R BeamCommander.app BeamCommander-Release/
+        elif [ -f "BeamCommander" ]; then
+          cp BeamCommander BeamCommander-Release/
+        fi
+        
+        # Copy essential files from project root
+        cd ../../../../..
+        cp README.md openframeworks-src-master/apps/myApps/BeamCommander/bin/BeamCommander-Release/
+        cp LICENSE.md openframeworks-src-master/apps/myApps/BeamCommander/bin/BeamCommander-Release/
+        cp DEVELOPER.md openframeworks-src-master/apps/myApps/BeamCommander/bin/BeamCommander-Release/
+        cp start.sh openframeworks-src-master/apps/myApps/BeamCommander/bin/BeamCommander-Release/
+        
+        # Copy demo files
+        cp -R doc openframeworks-src-master/apps/myApps/BeamCommander/bin/BeamCommander-Release/ || echo "No doc folder found"
+        
+        # Create archive
+        cd openframeworks-src-master/apps/myApps/BeamCommander/bin/
+        tar -czf BeamCommander-macos.tar.gz BeamCommander-Release/
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: BeamCommander-Build
+        path: openframeworks-src-master/apps/myApps/BeamCommander/bin/BeamCommander-macos.tar.gz
+        retention-days: 30
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: BeamCommander-Build
+        path: ./artifacts
+        
+    - name: Generate release tag
+      id: tag
+      run: |
+        # Generate semantic version based on date and commit
+        DATE=$(date +"%Y.%m.%d")
+        SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+        TAG="v${DATE}-${SHORT_SHA}"
+        echo "tag=${TAG}" >> $GITHUB_OUTPUT
+        echo "Generated tag: ${TAG}"
+        
+    - name: Extract changelog
+      id: changelog
+      run: |
+        # Extract recent commits for changelog
+        echo "## Changes" > CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        git log --oneline -10 --pretty=format:"- %s (%an)" >> CHANGELOG.md || echo "- Latest build from main branch" >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "## Build Information" >> CHANGELOG.md
+        echo "- **Built on**: $(date)" >> CHANGELOG.md
+        echo "- **Commit**: ${{ github.sha }}" >> CHANGELOG.md
+        echo "- **Branch**: ${{ github.ref_name }}" >> CHANGELOG.md
+        
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.tag.outputs.tag }}
+        name: BeamCommander ${{ steps.tag.outputs.tag }}
+        body_path: CHANGELOG.md
+        files: |
+          ./artifacts/BeamCommander-macos.tar.gz
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify:
+    needs: [build, release]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Notify build status
+      run: |
+        if [ "${{ needs.build.result }}" == "success" ] && [ "${{ needs.release.result }}" == "success" ]; then
+          echo "✅ Build and release completed successfully"
+        elif [ "${{ needs.build.result }}" == "failure" ]; then
+          echo "❌ Build failed"
+          exit 1
+        elif [ "${{ needs.release.result }}" == "failure" ]; then
+          echo "⚠️ Build succeeded but release failed"
+          exit 1
+        else
+          echo "ℹ️ Build completed with status: ${{ needs.build.result }}"
+        fi

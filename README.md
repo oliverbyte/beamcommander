@@ -42,8 +42,8 @@ BeamCommander is a comprehensive laser control system that bridges OSC (Open Sou
    **Option C: Open Stage Control Web Interface**
    - Install [Open Stage Control](https://openstagecontrol.ammd.net/) on your device
    - Use the provided configuration files:
-     - `open-stage-control-server.config` - Server configuration
-     - `open-stage-control-session.json` - Touch interface layout
+     - [`open-stage-control-server.config`](openframeworks-src-master/apps/myApps/BeamCommander/open-stage-control-server.config) - Server configuration
+     - [`open-stage-control-session.json`](openframeworks-src-master/apps/myApps/BeamCommander/open-stage-control-session.json) - Touch interface layout
    - Access the web interface from any device on your network
 
 ### Prerequisites

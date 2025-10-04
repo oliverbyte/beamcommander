@@ -1,0 +1,48 @@
+# Build artifacts
+*.o
+*.obj
+*.a
+*.lib
+*.dll
+*.dylib
+*.so
+*.app/Contents/MacOS/*
+!*.app/Contents/MacOS/.gitkeep
+
+# Compiled binaries in openframeworks examples (but keep BeamCommander)
+openframeworks-src-master/examples/**/bin/
+openframeworks-src-master/apps/devApps/**/bin/
+!openframeworks-src-master/apps/myApps/BeamCommander/bin/
+
+# Object files and build artifacts
+openframeworks-src-master/**/obj/
+openframeworks-src-master/**/*.o
+openframeworks-src-master/**/*.obj
+openframeworks-src-master/**/*.a
+openframeworks-src-master/**/*.lib
+
+# IDE files
+.DS_Store
+*.xcworkspace
+*.xcuserdata
+*.pbxuser
+*.perspective
+*.perspectivev3
+*.mode1v3
+*.mode2v3
+.vscode/launch.json
+.vscode/tasks.json
+
+# Logs
+*.log
+output.log
+
+# Temporary files
+*~
+*.tmp
+*.temp
+.#*
+
+# OS generated files
+Thumbs.db
+Desktop.ini

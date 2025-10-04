@@ -1,0 +1,19 @@
+{
+    "group": {
+        "label": "2 lasers"
+    },
+    "lasers": [
+        {
+            "Object3D": {
+                "3D_Orientation": "0, 0, 0",
+                "3D_Position": "-150, 0, 0"
+            }
+        },
+        {
+            "Object3D": {
+                "3D_Orientation": "0, 0, 0",
+                "3D_Position": "150, 0, 0"
+            }
+        }
+    ]
+}

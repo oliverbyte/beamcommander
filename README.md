@@ -288,24 +288,6 @@ The AKAI APC40 MK2 is organized into several control zones:
 - **Scene 4**: Enable rainbow mode
 - **Scene 5**: Custom RGB mode (use knobs for mixing)
 
-### Performance Tips
-- **Combo Controls**: Hold **Rec** + **Cue Button** to save current state to that cue slot
-- **Flash Effects**: Use **Flash** button with `/flash/release_ms` knob for fade-out effects
-- **Live Mixing**: Combine movement patterns with shape changes for dynamic performances
-- **Quick Access**: Use top knobs for immediate brightness and position adjustments
-- **Cue Chains**: Save different looks to cue slots for seamless transitions
-
-### APC40 Layout Reference
-
-![BeamCommander AKAI APC40 MK2 Mapping](doc/osc2Laser%20APC40%20Mapping.png)
-
-### Troubleshooting
-
-- **No MIDI ports available**: Check APC40 USB connection and drivers
-- **Network errors**: Verify laser DAC network settings (typically 10.0.1.188)
-- **App crashes on exit**: Improved exit handling reduces crashes, but occasional exit crashes may still occur due to OpenFrameworks/ImGui cleanup
-- **Open Stage Control won't start**: Verify installation path in start_open-stage-control.sh
-
 ## System Requirements
 
 - **Operating System**: macOS 15.6.1 (Sequoia)

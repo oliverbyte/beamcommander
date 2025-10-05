@@ -27,7 +27,14 @@ BeamCommander is a comprehensive laser control system that bridges OSC (Open Sou
    - Double-click `BeamCommander.app` or run it from terminal
    - The application will start listening for OSC commands on UDP port 9000
 
-3. **Control Options**
+3. **Initial Laser Setup (Required)**
+   - **First Time**: The application opens with a configuration interface
+   - **Add Laser Hardware**: Click "Add Laser" to detect your DAC device
+   - **Zone Mapping**: Create and configure at least one output zone
+   - **Test Output**: Verify laser output is working before performance use
+   - **Save Configuration**: Settings are automatically saved for future sessions
+
+4. **Control Options**
 
    **Option A: Akai APC40 MIDI Controller**
    - Connect your Akai APC40 via USB
@@ -48,9 +55,29 @@ BeamCommander is a comprehensive laser control system that bridges OSC (Open Sou
 
 ### Prerequisites
 - macOS 15.6.1 or later
-- Compatible laser DAC hardware (EtherDream, Helios, LaserDock/LaserCube)
+- **Compatible Laser DAC Hardware** (see Compatible Hardware section below)
 - Optional: Akai APC40 MIDI controller for physical control
 - Optional: Open Stage Control for web-based touch interface
+
+## Compatible Hardware
+
+BeamCommander supports a wide range of laser DAC (Digital-to-Analog Converter) hardware through the powerful [ofxLaser](https://github.com/sebleedelisle/ofxLaser) framework:
+
+### Ethernet DACs
+- **EtherDream**: Industry-standard Ethernet laser DAC
+- **Laser Dock**: USB and Ethernet laser projector system
+- **LaserCube**: Compact wireless laser projector
+
+### USB DACs  
+- **Helios**: High-performance USB laser DAC
+- **Riya**: USB laser DAC with multiple output channels
+- **LaserDock/LaserCube**: USB connectivity options
+
+### Professional Systems
+- **Pangolin Beyond**: Compatible through network protocols
+- **ILDA Standard**: Support for standard ILDA test patterns and protocols
+
+**Note**: Specific DAC compatibility depends on drivers and may require additional setup. BeamCommander automatically detects connected hardware during the initial laser setup process.
 
 ### Control Methods
 
@@ -310,6 +337,20 @@ BeamCommander is built on modified versions of open-source frameworks:
 - **ofxLaser**: of_11.0.2 branch (legacy for OF 0.11.x) - Modified with joystick removal and ImGui safety improvements
 
 For detailed modification information, see `DEVELOPER.md`.
+
+## Acknowledgments
+
+Special thanks to the **ofxLaser development team** for creating the outstanding laser control framework that makes BeamCommander possible:
+
+- **[Seb Lee-Delisle](https://github.com/sebleedelisle)** - Lead developer of ofxLaser
+- **ofxLaser Contributors** - The community of developers who built and maintain this essential laser control library
+
+BeamCommander builds upon the excellent foundation provided by ofxLaser, extending it with real-time OSC control, MIDI integration, and performance-focused features. Without ofxLaser's robust hardware abstraction and rendering capabilities, this project would not exist.
+
+Additional thanks to:
+- **OpenFrameworks Community** - For the cross-platform creative coding framework
+- **Open Stage Control Developers** - For the flexible OSC control interface
+- **Beta Testers and Users** - For feedback and real-world testing
 
 ## License
 

@@ -354,6 +354,13 @@ BeamCommander incorporates multiple open-source components:
 
 See `LICENSE.md` for complete licensing information and third-party attributions.
 
+## Developer Contact
+
+For developer collaboration, contributions, or technical discussions, reach out to:
+- **Email**: [oliver.baltz@gmail.com](mailto:oliver.baltz@gmail.com)
+
+*Note: This contact is for developer-to-developer communication only. For technical issues and setup assistance, please refer to the documentation in `DEVELOPER.md`.*
+
 ## Support
 
 For technical issues, hardware compatibility, or performance setup assistance, refer to the developer documentation in `DEVELOPER.md`.

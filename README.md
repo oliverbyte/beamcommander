@@ -182,7 +182,27 @@ BeamCommander listens for OSC commands on **UDP port 9000**. All commands suppor
 
 ## MIDI Controller Reference (Akai APC40)
 
+![AKAI APC40 MK2 Mapping](doc/BeamCommander%20AKAI%20APC40%20MK2%20Mapping.jpg)
+
+*Complete AKAI APC40 MK2 controller mapping for BeamCommander - showing all knobs, buttons, and their corresponding laser control functions*
+
 The Akai APC40 provides tactile hardware control over BeamCommander's laser parameters. All MIDI controls are mapped to corresponding OSC commands for seamless integration.
+
+### Setup Instructions
+
+1. **Connect the Controller**: Plug your AKAI APC40 MK2 into your Mac via USB
+2. **Launch BeamCommander**: The application will automatically detect and connect to the MIDI controller
+3. **Verify Connection**: LED lights on the controller should illuminate, indicating active connection
+4. **Start Controlling**: All knobs and buttons are immediately ready for real-time laser control
+
+### Controller Layout Overview
+
+The AKAI APC40 MK2 is organized into several control zones:
+- **Top Knobs (1-8)**: Primary laser parameters (brightness, position, effects)
+- **Bottom Knobs (9-16)**: Wave patterns and rainbow effects  
+- **Grid Buttons**: Cue recall system (16 memory slots)
+- **Side Buttons**: Shape selection and movement patterns
+- **Transport**: Play/stop and emergency controls
 
 ### Knobs (Continuous Controllers)
 **Top Row - Shape & Color Controls:**

@@ -64,7 +64,7 @@ BeamCommander is a comprehensive laser control system that bridges OSC (Open Sou
 BeamCommander supports a wide range of laser DAC (Digital-to-Analog Converter) hardware through the powerful [ofxLaser](https://github.com/sebleedelisle/ofxLaser) framework:
 
 ### Ethernet DACs
-- **EtherDream**: Industry-standard Ethernet laser DAC
+- **EtherDream**: Industry-standard Ethernet laser DAC ✅ **Tested**
 - **Laser Dock**: USB and Ethernet laser projector system
 - **LaserCube**: Compact wireless laser projector
 
@@ -73,11 +73,10 @@ BeamCommander supports a wide range of laser DAC (Digital-to-Analog Converter) h
 - **Riya**: USB laser DAC with multiple output channels
 - **LaserDock/LaserCube**: USB connectivity options
 
-### Professional Systems
-- **Pangolin Beyond**: Compatible through network protocols
-- **ILDA Standard**: Support for standard ILDA test patterns and protocols
+### ILDA Standard
+- **ILDA Test Patterns**: Support for standard ILDA test patterns and protocols
 
-**Note**: Specific DAC compatibility depends on drivers and may require additional setup. BeamCommander automatically detects connected hardware during the initial laser setup process.
+**Note**: Only EtherDream DAC has been tested with BeamCommander. Other DACs are supported by the underlying ofxLaser framework but may require additional setup. BeamCommander automatically detects connected hardware during the initial laser setup process.
 
 ### Control Methods
 
@@ -298,13 +297,7 @@ The AKAI APC40 MK2 is organized into several control zones:
 
 ### APC40 Layout Reference
 
-The APC40 controller is organized in distinct sections:
-- **8x8 Grid**: Cue buttons in center for preset recall/save
-- **Two Knob Rows**: 8 knobs each for parameter control
-- **Right Side**: Scene buttons for color/mode selection
-- **Left Side**: Track buttons for movement patterns
-- **Bottom**: Transport controls (play, stop, record, flash)
-- **Top Row**: Clip launch buttons for shape selection
+![BeamCommander AKAI APC40 MK2 Mapping](doc/osc2Laser%20APC40%20Mapping.png)
 
 ### Troubleshooting
 

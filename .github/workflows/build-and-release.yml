@@ -2,10 +2,10 @@ name: Build and Release BeamCommander
 
 on:
   push:
-    branches: [ main ]
-    tags: [ 'v*' ]
-  pull_request:
-    branches: [ main ]
+    tags:
+      - 'v*-macos'
+      - 'v*-windows'
+      - 'v*-all'
 
 permissions:
   contents: write
@@ -15,8 +15,9 @@ env:
   BUILD_TYPE: Release
 
 jobs:
-  build:
+  build-macos:
     runs-on: macos-latest
+    if: contains(github.ref, '-macos') || contains(github.ref, '-all')
     
     steps:
     - name: Checkout repository
@@ -101,10 +102,98 @@ jobs:
         path: openframeworks-src-master/apps/myApps/BeamCommander/bin/BeamCommander-macos.tar.gz
         retention-days: 30
 
+  build-windows:
+    runs-on: windows-latest
+    if: contains(github.ref, '-windows') || contains(github.ref, '-all')
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        
+    - name: Setup MSVC
+      uses: microsoft/setup-msbuild@v2
+      
+    - name: Install dependencies
+      run: |
+        # Install any required dependencies for Windows
+        echo "Setting up Windows build environment..."
+        
+    - name: Build BeamCommander for Windows
+      run: |
+        echo "Building BeamCommander for Windows..."
+        cd openframeworks-src-master/apps/myApps/BeamCommander
+        
+        # Check for Visual Studio project files
+        if (Test-Path "*.sln") {
+          echo "Building with Visual Studio solution..."
+          msbuild *.sln /p:Configuration=Release /p:Platform=x64
+        } elseif (Test-Path "BeamCommander.vcxproj") {
+          echo "Building with Visual Studio project..."
+          msbuild BeamCommander.vcxproj /p:Configuration=Release /p:Platform=x64
+        } else {
+          echo "No Visual Studio project found. Creating project using projectGenerator..."
+          # You may need to use openFrameworks projectGenerator
+          # For now, we'll look for pre-built binaries or use make with MinGW
+          
+          # Try to use make if Makefile exists
+          if (Test-Path "Makefile") {
+            echo "Building with make (requires MinGW)..."
+            # Install MinGW or use existing Windows tools
+            make
+          } else {
+            echo "ERROR: No build system found for Windows"
+            exit 1
+          }
+        }
+      shell: powershell
+        
+    - name: Package Windows release
+      run: |
+        echo "Packaging Windows release..."
+        cd openframeworks-src-master/apps/myApps/BeamCommander/bin
+        
+        # Create release directory structure
+        New-Item -ItemType Directory -Force -Path "BeamCommander-Release"
+        
+        # Copy the built executable
+        if (Test-Path "BeamCommander.exe") {
+          Copy-Item "BeamCommander.exe" -Destination "BeamCommander-Release/"
+        } elseif (Test-Path "Release/BeamCommander.exe") {
+          Copy-Item "Release/BeamCommander.exe" -Destination "BeamCommander-Release/"
+        } elseif (Test-Path "x64/Release/BeamCommander.exe") {
+          Copy-Item "x64/Release/BeamCommander.exe" -Destination "BeamCommander-Release/"
+        }
+        
+        # Copy DLL files if they exist
+        Get-ChildItem -Path . -Filter "*.dll" -Recurse | Copy-Item -Destination "BeamCommander-Release/" -ErrorAction SilentlyContinue
+        
+        # Copy essential files from project root
+        cd ../../../../..
+        Copy-Item "README.md" -Destination "openframeworks-src-master/apps/myApps/BeamCommander/bin/BeamCommander-Release/"
+        Copy-Item "LICENSE.md" -Destination "openframeworks-src-master/apps/myApps/BeamCommander/bin/BeamCommander-Release/"
+        Copy-Item "DEVELOPER.md" -Destination "openframeworks-src-master/apps/myApps/BeamCommander/bin/BeamCommander-Release/"
+        
+        # Copy demo files including the live demo video
+        Copy-Item -Path "doc" -Destination "openframeworks-src-master/apps/myApps/BeamCommander/bin/BeamCommander-Release/" -Recurse -ErrorAction SilentlyContinue
+        
+        # Create archive
+        cd openframeworks-src-master/apps/myApps/BeamCommander/bin/
+        Compress-Archive -Path "BeamCommander-Release/*" -DestinationPath "BeamCommander-windows.zip"
+      shell: powershell
+        
+    - name: Upload Windows build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: BeamCommander-Windows-Build
+        path: openframeworks-src-master/apps/myApps/BeamCommander/bin/BeamCommander-windows.zip
+        retention-days: 30
+
   release:
-    needs: build
+    needs: [build-macos, build-windows]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: always() && (needs.build-macos.result == 'success' || needs.build-windows.result == 'success')
     
     steps:
     - name: Checkout repository
@@ -112,19 +201,25 @@ jobs:
       
     - name: Download build artifacts
       uses: actions/download-artifact@v4
+      if: needs.build-macos.result == 'success'
       with:
         name: BeamCommander-Build
+        path: ./artifacts
+        
+    - name: Download Windows build artifacts
+      uses: actions/download-artifact@v4
+      if: needs.build-windows.result == 'success'
+      with:
+        name: BeamCommander-Windows-Build
         path: ./artifacts
         
     - name: Generate release tag
       id: tag
       run: |
-        # Generate semantic version based on date and commit
-        DATE=$(date +"%Y.%m.%d")
-        SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
-        TAG="v${DATE}-${SHORT_SHA}"
+        # Use the pushed tag name
+        TAG=${GITHUB_REF#refs/tags/}
         echo "tag=${TAG}" >> $GITHUB_OUTPUT
-        echo "Generated tag: ${TAG}"
+        echo "Using tag: ${TAG}"
         
     - name: Extract changelog
       id: changelog
@@ -132,13 +227,19 @@ jobs:
         # Extract recent commits for changelog
         echo "## Changes" > CHANGELOG.md
         echo "" >> CHANGELOG.md
-        git log --oneline -10 --pretty=format:"- %s (%an)" >> CHANGELOG.md || echo "- Latest build from main branch" >> CHANGELOG.md
+        git log --oneline -10 --pretty=format:"- %s (%an)" >> CHANGELOG.md || echo "- Release build" >> CHANGELOG.md
         echo "" >> CHANGELOG.md
         echo "" >> CHANGELOG.md
         echo "## Build Information" >> CHANGELOG.md
         echo "- **Built on**: $(date)" >> CHANGELOG.md
         echo "- **Commit**: ${{ github.sha }}" >> CHANGELOG.md
-        echo "- **Branch**: ${{ github.ref_name }}" >> CHANGELOG.md
+        echo "- **Tag**: ${{ github.ref_name }}" >> CHANGELOG.md
+        
+    - name: Prepare release files
+      run: |
+        # List available artifacts
+        echo "Available artifacts:"
+        ls -la ./artifacts/ || echo "No artifacts directory"
         
     - name: Create Release
       uses: softprops/action-gh-release@v1
@@ -146,8 +247,7 @@ jobs:
         tag_name: ${{ steps.tag.outputs.tag }}
         name: BeamCommander ${{ steps.tag.outputs.tag }}
         body_path: CHANGELOG.md
-        files: |
-          ./artifacts/BeamCommander-macos.tar.gz
+        files: ./artifacts/*
         draft: false
         prerelease: false
         generate_release_notes: true
@@ -155,19 +255,19 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   notify:
-    needs: [build, release]
+    needs: [build-macos, build-windows, release]
     runs-on: ubuntu-latest
     if: always()
     
     steps:
     - name: Notify build status
       run: |
-        if [ "${{ needs.build.result }}" == "success" ] && [ "${{ needs.release.result }}" == "success" ]; then
+        if [ "${{ needs.build-macos.result }}" == "success" ] && [ "${{ needs.build-windows.result }}" == "success" ] && [ "${{ needs.release.result }}" == "success" ]; then
           echo "✅ Build and release completed successfully"
-        elif [ "${{ needs.build.result }}" == "failure" ]; then
+        elif [ "${{ needs.build-macos.result }}" == "failure" ] || [ "${{ needs.build-windows.result }}" == "failure" ]; then
           echo "❌ Build failed"
         elif [ "${{ needs.release.result }}" == "failure" ]; then
           echo "⚠️ Build succeeded but release failed"
         else
-          echo "ℹ️ Build completed with status: ${{ needs.build.result }}, Release: ${{ needs.release.result }}"
+          echo "ℹ️ Build completed with status: macOS: ${{ needs.build-macos.result }}, Windows: ${{ needs.build-windows.result }}, Release: ${{ needs.release.result }}"
         fi

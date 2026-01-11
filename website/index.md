@@ -7,13 +7,14 @@ keywords: laser control, osc laser, midi laser control, akai apc40 laser, real-t
 
 <section class="hero">
   <div class="container">
-    <h1>Professional Laser Control for Live Performances</h1>
-    <p class="subtitle">Real-time laser control system with OSC commands, MIDI integration, and web interface</p>
+    <h1>BeamCommander - Professional Laser Control for Live Performances</h1>
+    <p class="subtitle">Free & open-source laser control system with OSC commands, MIDI integration, and web interface</p>
     <div class="hero-badges">
+      <span class="badge">💎 Free & Open Source</span>
       <span class="badge">✨ Live Performance Ready</span>
       <span class="badge">🎛️ MIDI Controller Support</span>
       <span class="badge">🌐 Web Interface</span>
-      <span class="badge">🔧 Multi-DAC Support</span>
+      <span class="badge">🤝 Community Driven</span>
     </div>
     <div class="cta-buttons">
       <a href="https://github.com/{{ site.repository }}/releases" class="btn btn-primary">Download for Mac</a>
@@ -82,8 +83,14 @@ keywords: laser control, osc laser, midi laser control, akai apc40 laser, real-t
       
       <div class="feature-card">
         <span class="feature-icon">📖</span>
-        <h3>Open Source</h3>
-        <p>Full source code access. Modify, extend, and learn from the codebase. Built on OpenFrameworks and ofxLaser.</p>
+        <h3>Free & Open Source</h3>
+        <p>Completely free software with full source code access. No subscriptions, no limitations. Modify, extend, and learn from the codebase. Built on OpenFrameworks and ofxLaser.</p>
+      </div>
+      
+      <div class="feature-card">
+        <span class="feature-icon">🤝</span>
+        <h3>Community Driven</h3>
+        <p>Developed and supported by a passionate community. Get help, share ideas, and contribute. Open development process with transparent roadmap.</p>
       </div>
       
       <div class="feature-card">

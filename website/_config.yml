@@ -4,7 +4,7 @@ title: BeamCommander - Laser Control System
 description: Professional laser control system bridging OSC commands with laser hardware for real-time visual effects in performances and installations
 author: Oliver Baltz
 email: ""
-baseurl: "/BeamCommander"
+baseurl: "" # Empty for local development (GitHub Pages workflow will override this)
 url: "https://oliverbyte.github.io"
 repository: "oliverbyte/BeamCommander"
 
@@ -52,7 +52,8 @@ defaults:
 exclude:
   - Gemfile
   - Gemfile.lock
-  - vendor
-  - .bundle
+  - vendor/
+  - .bundle/
   - README.md
   - WEBSITE.md
+  - preview.py

@@ -1,6 +1,8 @@
 # BeamCommander - Laser Control System
 
-BeamCommander is a comprehensive laser control system that bridges OSC (Open Sound Control) commands with laser hardware, providing real-time visual effects for performances and installations.
+💎 **Free & Open Source** | 🤝 **Community Driven** | ✨ **Live Performance Ready**
+
+BeamCommander is a free, open-source laser control system that bridges OSC (Open Sound Control) commands with laser hardware, providing real-time visual effects for performances and installations. Developed and supported by a passionate community of artists, developers, and laser enthusiasts.
 
 **Live Performance Ready**: Control your lasers in real-time using an Akai APC40 MIDI controller and/or intuitive web interface. Designed specifically for live performances, VJ sets, and externally controlled laser shows via OSC commands. Perfect for artists, performers, and installation designers who need responsive, tactile control over complex laser visuals.
 

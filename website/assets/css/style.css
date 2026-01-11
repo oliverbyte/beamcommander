@@ -393,6 +393,22 @@ body {
   color: #9ca3af;
 }
 
+.footer-legal {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
+.footer-legal a {
+  color: #9ca3af;
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.footer-legal a:hover {
+  color: var(--primary-light);
+}
+
 /* Documentation Page */
 .docs-content {
   padding: 4rem 0;

@@ -46,3 +46,6 @@ output.log
 # OS generated files
 Thumbs.db
 Desktop.ini
+# Jekyll build artifacts
+.jekyll-cache/
+website/_site/

@@ -13,7 +13,7 @@
   --danger: #ff0000;
   --transition: all 0.3s ease;
   --neon-green: #00cc33;
-  --neon-glow: 0 0 5px rgba(0, 204, 51, 0.3), 0 0 10px rgba(0, 204, 51, 0.2);
+  --neon-glow: 0 0 8px rgba(0, 204, 51, 0.4), 0 0 15px rgba(0, 204, 51, 0.3), 0 0 20px rgba(0, 204, 51, 0.15);
 }
 
 * {
@@ -66,7 +66,7 @@ body {
 
 .logo:hover {
   color: var(--primary-light);
-  text-shadow: 0 0 8px rgba(0, 204, 51, 0.4), 0 0 15px rgba(0, 204, 51, 0.2);
+  text-shadow: 0 0 12px rgba(0, 204, 51, 0.5), 0 0 20px rgba(0, 204, 51, 0.3), 0 0 30px rgba(0, 204, 51, 0.15);
 }
 
 .logo-icon {
@@ -89,7 +89,7 @@ body {
 
 .nav-menu a:hover {
   color: var(--neon-green);
-  text-shadow: 0 0 5px rgba(0, 204, 51, 0.3);
+  text-shadow: 0 0 8px rgba(0, 204, 51, 0.4), 0 0 12px rgba(0, 204, 51, 0.2);
 }
 
 .github-link {
@@ -232,7 +232,7 @@ body {
   text-align: center;
   margin-bottom: 1rem;
   color: var(--neon-green);
-  text-shadow: 0 0 5px rgba(0, 204, 51, 0.3);
+  text-shadow: 0 0 8px rgba(0, 204, 51, 0.4), 0 0 15px rgba(0, 204, 51, 0.2);
 }
 
 .section-subtitle {
@@ -412,7 +412,7 @@ body {
 
 .footer-section ul li a:hover {
   color: var(--neon-green);
-  text-shadow: 0 0 5px rgba(0, 204, 51, 0.3);
+  text-shadow: 0 0 8px rgba(0, 204, 51, 0.4), 0 0 12px rgba(0, 204, 51, 0.2);
 }
 
 .footer-bottom {

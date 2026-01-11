@@ -115,38 +115,74 @@ jobs:
     - name: Setup MSVC
       uses: microsoft/setup-msbuild@v2
       
-    - name: Install dependencies
+    - name: Check for Windows build
+      id: check_windows
       run: |
-        # Install any required dependencies for Windows
-        echo "Setting up Windows build environment..."
-        
-    - name: Build BeamCommander for Windows
-      run: |
-        echo "Building BeamCommander for Windows..."
+        echo "Checking for Windows build files..."
         cd openframeworks-src-master/apps/myApps/BeamCommander
         
         # Check for Visual Studio project files
-        if (Test-Path "*.sln") {
-          echo "Building with Visual Studio solution..."
-          msbuild *.sln /p:Configuration=Release /p:Platform=x64
-        } elseif (Test-Path "BeamCommander.vcxproj") {
-          echo "Building with Visual Studio project..."
-          msbuild BeamCommander.vcxproj /p:Configuration=Release /p:Platform=x64
+        if (Test-Path "*.sln" -PathType Leaf) {
+          echo "Visual Studio solution found"
+          echo "has_vs_project=true" >> $env:GITHUB_OUTPUT
+        } elseif (Test-Path "*.vcxproj" -PathType Leaf) {
+          echo "Visual Studio project found"
+          echo "has_vs_project=true" >> $env:GITHUB_OUTPUT
+        } elseif (Test-Path "bin/BeamCommander.exe" -PathType Leaf) {
+          echo "Pre-built Windows executable found"
+          echo "has_vs_project=false" >> $env:GITHUB_OUTPUT
+          echo "has_prebuilt=true" >> $env:GITHUB_OUTPUT
         } else {
-          echo "No Visual Studio project found. Creating project using projectGenerator..."
-          # You may need to use openFrameworks projectGenerator
-          # For now, we'll look for pre-built binaries or use make with MinGW
-          
-          # Try to use make if Makefile exists
-          if (Test-Path "Makefile") {
-            echo "Building with make (requires MinGW)..."
-            # Install MinGW or use existing Windows tools
-            make
-          } else {
-            echo "ERROR: No build system found for Windows"
-            exit 1
-          }
+          echo "No Visual Studio project or pre-built executable found"
+          echo "has_vs_project=false" >> $env:GITHUB_OUTPUT
+          echo "has_prebuilt=false" >> $env:GITHUB_OUTPUT
         }
+      shell: powershell
+        
+    - name: Build BeamCommander for Windows
+      if: steps.check_windows.outputs.has_vs_project == 'true'
+      run: |
+        echo "Building BeamCommander for Windows with Visual Studio..."
+        cd openframeworks-src-master/apps/myApps/BeamCommander
+        
+        # Find and build the Visual Studio solution or project
+        if (Test-Path "*.sln") {
+          $solution = Get-ChildItem -Filter "*.sln" | Select-Object -First 1
+          echo "Building solution: $($solution.Name)"
+          msbuild $solution.FullName /p:Configuration=Release /p:Platform=x64 /m
+        } elseif (Test-Path "*.vcxproj") {
+          $project = Get-ChildItem -Filter "*.vcxproj" | Select-Object -First 1
+          echo "Building project: $($project.Name)"
+          msbuild $project.FullName /p:Configuration=Release /p:Platform=x64 /m
+        }
+      shell: powershell
+      
+    - name: Use pre-built Windows executable
+      if: steps.check_windows.outputs.has_vs_project != 'true' && steps.check_windows.outputs.has_prebuilt == 'true'
+      run: |
+        echo "Using pre-built BeamCommander Windows executable..."
+        cd openframeworks-src-master/apps/myApps/BeamCommander/bin
+        
+        if (Test-Path "BeamCommander.exe") {
+          echo "✅ BeamCommander.exe found"
+          Get-ChildItem
+        } else {
+          echo "❌ BeamCommander.exe not found"
+          exit 1
+        }
+      shell: powershell
+      
+    - name: Fail if no build method available
+      if: steps.check_windows.outputs.has_vs_project != 'true' && steps.check_windows.outputs.has_prebuilt != 'true'
+      run: |
+        echo "❌ ERROR: No Visual Studio project files or pre-built Windows executable found"
+        echo ""
+        echo "To enable Windows builds, you need to either:"
+        echo "1. Add Visual Studio project files (.sln/.vcxproj) to the repository"
+        echo "2. Include a pre-built BeamCommander.exe in openframeworks-src-master/apps/myApps/BeamCommander/bin/"
+        echo ""
+        echo "You can generate Visual Studio project files using openFrameworks projectGenerator"
+        exit 1
       shell: powershell
         
     - name: Package Windows release

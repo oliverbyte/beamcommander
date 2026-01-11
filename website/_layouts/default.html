@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="{{ site.lang | default: 'en' }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  
+  {% seo %}
+  
+  <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <a href="{{ '/' | relative_url }}" class="logo">
+        <span class="logo-icon">✨</span>
+        <span class="logo-text">BeamCommander</span>
+      </a>
+      <ul class="nav-menu">
+        <li><a href="{{ '/' | relative_url }}">Home</a></li>
+        <li><a href="{{ '/features' | relative_url }}">Features</a></li>
+        <li><a href="{{ '/installation' | relative_url }}">Installation</a></li>
+        <li><a href="{{ '/docs' | relative_url }}">Docs</a></li>
+        <li><a href="{{ '/faq' | relative_url }}">FAQ</a></li>
+        <li><a href="https://github.com/{{ site.repository }}" target="_blank" rel="noopener" class="github-link">GitHub</a></li>
+      </ul>
+      <button class="mobile-menu-toggle" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    {{ content }}
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h3>BeamCommander</h3>
+          <p>Professional laser control made simple.</p>
+        </div>
+        <div class="footer-section">
+          <h4>Quick Links</h4>
+          <ul>
+            <li><a href="{{ '/features' | relative_url }}">Features</a></li>
+            <li><a href="{{ '/installation' | relative_url }}">Installation</a></li>
+            <li><a href="{{ '/docs' | relative_url }}">Documentation</a></li>
+            <li><a href="{{ '/faq' | relative_url }}">FAQ</a></li>
+            <li><a href="https://github.com/{{ site.repository }}/releases">Releases</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>Community</h4>
+          <ul>
+            <li><a href="https://github.com/{{ site.repository }}">GitHub</a></li>
+            <li><a href="https://github.com/{{ site.repository }}/issues">Issues</a></li>
+            <li><a href="https://github.com/{{ site.repository }}/discussions">Discussions</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; {{ 'now' | date: "%Y" }} BeamCommander. Open Source Project.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{{ '/assets/js/main.js' | relative_url }}"></script>
+</body>
+</html>

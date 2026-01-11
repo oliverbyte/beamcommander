@@ -1,0 +1,58 @@
+# Jekyll Configuration for BeamCommander Website
+
+title: BeamCommander - Laser Control System
+description: Professional laser control system bridging OSC commands with laser hardware for real-time visual effects in performances and installations
+author: Oliver Baltz
+email: ""
+baseurl: "/BeamCommander"
+url: "https://oliverbyte.github.io"
+repository: "oliverbyte/BeamCommander"
+
+# Build settings
+markdown: kramdown
+theme: null
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+  - jekyll-feed
+
+# SEO settings
+lang: en
+logo: /img/logo.png
+
+# Social media
+social:
+  name: BeamCommander
+  links:
+    - https://github.com/oliverbyte/BeamCommander
+
+# Jekyll SEO Tag
+twitter:
+  card: summary_large_image
+
+# Collections
+collections:
+  pages:
+    output: true
+    permalink: /:name/
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "default"
+  - scope:
+      path: ""
+    values:
+      image: /img/demo.jpg
+
+# Exclude files
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - vendor
+  - .bundle
+  - README.md
+  - WEBSITE.md

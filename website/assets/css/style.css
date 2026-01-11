@@ -1,17 +1,19 @@
 :root {
-  --primary: #6366f1;
-  --primary-light: #818cf8;
-  --primary-dark: #4f46e5;
-  --secondary: #8b5cf6;
-  --bg-light: #f8fafc;
-  --bg-dark: #0f172a;
-  --text-dark: #1e293b;
-  --text-light: #64748b;
-  --border-color: #e2e8f0;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --danger: #ef4444;
+  --primary: #00ff41;
+  --primary-light: #39ff6e;
+  --primary-dark: #00cc34;
+  --secondary: #00ff41;
+  --bg-light: #0a0a0a;
+  --bg-dark: #000000;
+  --text-dark: #ffffff;
+  --text-light: #a0a0a0;
+  --border-color: #1a1a1a;
+  --success: #00ff41;
+  --warning: #ffff00;
+  --danger: #ff0000;
   --transition: all 0.3s ease;
+  --neon-green: #00ff41;
+  --neon-glow: 0 0 10px #00ff41, 0 0 20px #00ff41, 0 0 30px #00ff41;
 }
 
 * {
@@ -24,7 +26,7 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.6;
   color: var(--text-dark);
-  background: white;
+  background: var(--bg-dark);
 }
 
 .container {
@@ -35,8 +37,9 @@ body {
 
 /* Navigation */
 .navbar {
-  background: white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: var(--bg-dark);
+  box-shadow: 0 1px 3px rgba(0, 255, 65, 0.3);
+  border-bottom: 1px solid var(--neon-green);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -55,13 +58,15 @@ body {
   gap: 0.5rem;
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--primary);
+  color: var(--neon-green);
   text-decoration: none;
   transition: var(--transition);
+  text-shadow: var(--neon-glow);
 }
 
 .logo:hover {
-  color: var(--primary-dark);
+  color: var(--primary-light);
+  text-shadow: 0 0 15px #00ff41, 0 0 30px #00ff41, 0 0 45px #00ff41;
 }
 
 .logo-icon {
@@ -76,25 +81,28 @@ body {
 }
 
 .nav-menu a {
-  color: var(--text-dark);
+  color: var(--text-light);
   text-decoration: none;
   font-weight: 500;
   transition: var(--transition);
 }
 
 .nav-menu a:hover {
-  color: var(--primary);
+  color: var(--neon-green);
+  text-shadow: 0 0 10px var(--neon-green);
 }
 
 .github-link {
   padding: 0.5rem 1rem;
-  background: var(--primary);
-  color: white !important;
+  background: var(--neon-green);
+  color: black !important;
   border-radius: 8px;
+  box-shadow: var(--neon-glow);
 }
 
 .github-link:hover {
-  background: var(--primary-dark);
+  background: var(--primary-light);
+  box-shadow: 0 0 15px var(--neon-green), 0 0 30px var(--neon-green);
 }
 
 .mobile-menu-toggle {
@@ -117,16 +125,19 @@ body {
 
 /* Hero Section */
 .hero {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #000000 0%, #0a0a0a 100%);
   color: white;
   padding: 6rem 0;
   text-align: center;
+  border-bottom: 2px solid var(--neon-green);
 }
 
 .hero h1 {
   font-size: 3.5rem;
   margin-bottom: 1rem;
   font-weight: 700;
+  color: var(--neon-green);
+  text-shadow: var(--neon-glow);
 }
 
 .subtitle {
@@ -144,11 +155,14 @@ body {
 }
 
 .badge {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 255, 65, 0.1);
   padding: 0.5rem 1rem;
   border-radius: 50px;
   font-weight: 500;
   backdrop-filter: blur(10px);
+  border: 1px solid var(--neon-green);
+  color: var(--neon-green);
+  box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
 }
 
 .cta-buttons {
@@ -171,24 +185,27 @@ body {
 }
 
 .btn-primary {
-  background: white;
-  color: var(--primary);
+  background: var(--neon-green);
+  color: black;
+  box-shadow: var(--neon-glow);
+  font-weight: 700;
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 20px var(--neon-green), 0 0 40px var(--neon-green), 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 .btn-secondary {
   background: transparent;
-  color: white;
-  border: 2px solid white;
+  color: var(--neon-green);
+  border: 2px solid var(--neon-green);
 }
 
 .btn-secondary:hover {
-  background: white;
-  color: var(--primary);
+  background: var(--neon-green);
+  color: black;
+  box-shadow: var(--neon-glow);
 }
 
 .btn-large {
@@ -206,13 +223,16 @@ body {
 
 .alt-bg {
   background: var(--bg-light);
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .section-title {
   font-size: 2.5rem;
   text-align: center;
   margin-bottom: 1rem;
-  color: var(--text-dark);
+  color: var(--neon-green);
+  text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
 }
 
 .section-subtitle {
@@ -231,28 +251,31 @@ body {
 }
 
 .feature-card {
-  background: white;
+  background: var(--bg-light);
   padding: 2rem;
   border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+  box-shadow: 0 4px 6px rgba(0, 255, 65, 0.1);
   transition: var(--transition);
+  border: 1px solid var(--border-color);
 }
 
 .feature-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 20px rgba(0, 255, 65, 0.2);
+  border-color: var(--neon-green);
 }
 
 .feature-icon {
   font-size: 3rem;
   display: block;
   margin-bottom: 1rem;
+  filter: drop-shadow(0 0 10px var(--neon-green));
 }
 
 .feature-card h3 {
   font-size: 1.5rem;
   margin-bottom: 1rem;
-  color: var(--text-dark);
+  color: var(--neon-green);
 }
 
 .feature-card p {
@@ -268,10 +291,11 @@ body {
 }
 
 .demo-item {
-  background: white;
+  background: var(--bg-light);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px rgba(0, 255, 65, 0.1);
+  border: 1px solid var(--border-color);
 }
 
 .demo-caption {
@@ -331,6 +355,8 @@ body {
 .cta-section h2 {
   font-size: 2.5rem;
   margin-bottom: 1rem;
+  color: var(--neon-green);
+  text-shadow: var(--neon-glow);
 }
 
 .cta-section p {
@@ -344,6 +370,7 @@ body {
   background: var(--bg-dark);
   color: white;
   padding: 3rem 0 1rem;
+  border-top: 2px solid var(--neon-green);
 }
 
 .footer-content {
@@ -356,12 +383,13 @@ body {
 .footer-section h3 {
   font-size: 1.5rem;
   margin-bottom: 1rem;
+  color: var(--neon-green);
 }
 
 .footer-section h4 {
   font-size: 1.125rem;
   margin-bottom: 1rem;
-  color: white;
+  color: var(--neon-green);
 }
 
 .footer-section p {
@@ -383,11 +411,12 @@ body {
 }
 
 .footer-section ul li a:hover {
-  color: var(--primary-light);
+  color: var(--neon-green);
+  text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
 }
 
 .footer-bottom {
-  border-top: 1px solid #374151;
+  border-top: 1px solid var(--neon-green);
   padding-top: 2rem;
   text-align: center;
   color: #9ca3af;

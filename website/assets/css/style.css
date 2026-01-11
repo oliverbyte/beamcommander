@@ -1,19 +1,19 @@
 :root {
-  --primary: #00ff41;
-  --primary-light: #39ff6e;
-  --primary-dark: #00cc34;
-  --secondary: #00ff41;
+  --primary: #00cc33;
+  --primary-light: #33dd66;
+  --primary-dark: #009926;
+  --secondary: #00cc33;
   --bg-light: #0a0a0a;
   --bg-dark: #000000;
   --text-dark: #ffffff;
   --text-light: #a0a0a0;
   --border-color: #1a1a1a;
-  --success: #00ff41;
+  --success: #00cc33;
   --warning: #ffff00;
   --danger: #ff0000;
   --transition: all 0.3s ease;
-  --neon-green: #00ff41;
-  --neon-glow: 0 0 10px #00ff41, 0 0 20px #00ff41, 0 0 30px #00ff41;
+  --neon-green: #00cc33;
+  --neon-glow: 0 0 5px rgba(0, 204, 51, 0.3), 0 0 10px rgba(0, 204, 51, 0.2);
 }
 
 * {
@@ -66,7 +66,7 @@ body {
 
 .logo:hover {
   color: var(--primary-light);
-  text-shadow: 0 0 15px #00ff41, 0 0 30px #00ff41, 0 0 45px #00ff41;
+  text-shadow: 0 0 8px rgba(0, 204, 51, 0.4), 0 0 15px rgba(0, 204, 51, 0.2);
 }
 
 .logo-icon {
@@ -89,7 +89,7 @@ body {
 
 .nav-menu a:hover {
   color: var(--neon-green);
-  text-shadow: 0 0 10px var(--neon-green);
+  text-shadow: 0 0 5px rgba(0, 204, 51, 0.3);
 }
 
 .github-link {
@@ -232,7 +232,7 @@ body {
   text-align: center;
   margin-bottom: 1rem;
   color: var(--neon-green);
-  text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+  text-shadow: 0 0 5px rgba(0, 204, 51, 0.3);
 }
 
 .section-subtitle {
@@ -412,7 +412,7 @@ body {
 
 .footer-section ul li a:hover {
   color: var(--neon-green);
-  text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+  text-shadow: 0 0 5px rgba(0, 204, 51, 0.3);
 }
 
 .footer-bottom {

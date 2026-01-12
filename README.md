@@ -2,7 +2,7 @@
 
 💎 **Free & Open Source** | 🤝 **Community Driven** | ✨ **Live Performance Ready**
 
-📚 [Website](https://oliverbyte.github.io/beamcommander/) | 💬 [Discussions](https://github.com/oliverbyte/BeamCommander/discussions) | 💡 [LightCommander](https://github.com/oliverbyte/LightCommander)
+📚 [Website](https://oliverbyte.github.io/beamcommander/) | 💬 [Discussions](https://github.com/oliverbyte/BeamCommander/discussions)
 
 BeamCommander is a free, open-source laser control system that bridges OSC (Open Sound Control) commands with laser hardware, providing real-time visual effects for performances and installations. Developed and supported by a passionate community of artists, developers, and laser enthusiasts.
 

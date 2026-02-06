@@ -1,152 +1,97 @@
 # Windows Build Setup Guide
 
-This guide explains how to set up Windows builds for BeamCommander in the GitHub Actions workflow.
+This guide explains how to set up Windows releases for BeamCommander **without needing Windows** for CI/CD.
 
 ## Current Status ✅
 
-**Windows build is now configured!** Visual Studio project files have been added to the repository and the GitHub Actions workflow is ready to build Windows releases.
+**Windows releases are now possible without Windows in CI/CD!** 
 
-## What's Included
+The workflow uses a **pre-built Windows executable** approach:
+- Build the Windows executable **once** on a Windows machine
+- Commit it to the repository  
+- GitHub Actions packages it from Linux (ubuntu-latest)
+- No Windows runners or Visual Studio needed in CI/CD
 
-The repository now contains:
-- `BeamCommander.sln` - Visual Studio 2019 solution file
-- `BeamCommander.vcxproj` - Visual Studio project file with all addons configured
-- `BeamCommander.vcxproj.filters` - Project filters
-- `icon.rc` - Icon resource file
-- `icon.ico` and `icon_debug.ico` - Application icons
+## How It Works
 
-All required addons are configured:
-- ofxLaser
-- ofxMidi
-- ofxOsc
-- ofxOpenCv
-- ofxNetwork
-- ofxPoco
+### One-Time Windows Build (by someone with Windows access)
+1. Build `BeamCommander.exe` on Windows (using Visual Studio or MinGW)
+2. Test the executable
+3. Commit `BeamCommander.exe` to `openframeworks-src-master/apps/myApps/BeamCommander/bin/`
+4. Push to repository
 
-## How to Trigger a Windows Build
+### Release Process (from any machine)
+```bash
+git tag v1.0-windows
+git push origin v1.0-windows
+```
 
-To create a Windows release, simply create and push a tag with the pattern `v*-windows`:
+GitHub Actions (running on **Linux**) will:
+1. Find the pre-built `BeamCommander.exe`
+2. Package it with documentation
+3. Create release with `BeamCommander-windows.zip`
+
+**No Windows required!**
+
+## How to Build Windows Executable
+
+See **[BUILD_WINDOWS_EXECUTABLE.md](BUILD_WINDOWS_EXECUTABLE.md)** for detailed instructions on:
+- Building with Visual Studio
+- Building with MSYS2/MinGW
+- Testing the executable
+- Committing to the repository
+
+## Quick Start
+
+### If You Have Windows Access:
+1. Follow [BUILD_WINDOWS_EXECUTABLE.md](BUILD_WINDOWS_EXECUTABLE.md)
+2. Build and commit `BeamCommander.exe`
+3. Done! Releases can now be created from any machine
+
+### If You Don't Have Windows Access:
+Ask someone with Windows to:
+1. Build `BeamCommander.exe` following the guide
+2. Test it works
+3. Commit and push to the repository
+
+Then **you** can create releases from Linux/macOS!
+
+## Creating a Windows Release
+
+Once the Windows executable is in the repository:
 
 ```bash
-# Create a test tag
-git tag v1.0-test-windows
-
-# Push the tag to GitHub
-git push origin v1.0-test-windows
+git tag v1.0-windows
+git push origin v1.0-windows
 ```
 
-The GitHub Actions workflow will:
-1. Download the required openFrameworks libraries for Windows
-2. Build BeamCommander using MSBuild
-3. Package the executable with documentation
-4. Create a GitHub release with the Windows build artifact
+The GitHub Actions workflow (running on **ubuntu-latest**) will:
+1. Check for `BeamCommander.exe` in `bin/` folder
+2. Package it with documentation
+3. Create a GitHub release with `BeamCommander-windows.zip`
 
-## Alternative Build Options
+## Benefits of This Approach
 
-### Option 1: Visual Studio Project Files (✅ Already Implemented)
+✅ **No Windows needed for CI/CD** - Workflow runs on Linux
+✅ **Fast releases** - No compilation, just packaging (~30 seconds)
+✅ **Pre-tested** - Executable is tested before committing
+✅ **Simple** - No complex Windows build setup in GitHub Actions
+✅ **Reliable** - Same binary every time
 
-This is the **recommended** and **currently implemented** approach. The Visual Studio project files have been added to the repository.
+## When to Update the Windows Executable
 
-The workflow will:
-1. Download openFrameworks libraries using `download_libs.ps1`
-2. Build from source using MSBuild
-3. Package the executable
+Rebuild and commit a new `BeamCommander.exe` when:
+- Source code changes
+- Dependencies are updated
+- Bug fixes for Windows
+- New features added
 
-**No additional setup required** - just push a tag to trigger the build!
+## Workflow Details
 
-### Option 2: Use Pre-built Windows Executable (Alternative)
+The GitHub Actions workflow:
+- **Runner**: ubuntu-latest (Linux)
+- **Checks**: Verifies `BeamCommander.exe` exists
+- **Packages**: Creates zip with exe + docs
+- **Uploads**: Creates GitHub release
 
-This allows you to include a pre-built Windows executable in the repository for releases.
-
-#### Steps:
-
-1. **Build BeamCommander on Windows:**
-   
-   Using Visual Studio or your preferred method, build the BeamCommander executable locally.
-
-2. **Locate the executable:**
-   ```
-   openframeworks-src-master/apps/myApps/BeamCommander/bin/BeamCommander.exe
-   ```
-
-3. **Commit the pre-built executable:**
-   ```bash
-   cd openframeworks-src-master/apps/myApps/BeamCommander/bin
-   git add BeamCommander.exe
-   git add *.dll  # Include any required DLL files
-   git commit -m "Add pre-built Windows executable"
-   git push
-   ```
-
-4. **Test the workflow:**
-   ```bash
-   git tag v1.1-alpha-windows
-   git push origin v1.1-alpha-windows
-   ```
-
-## How the Workflow Works
-
-The updated workflow now:
-
-1. **Checks for build files** in this order:
-   - Visual Studio solution files (`.sln`)
-   - Visual Studio project files (`.vcxproj`)
-   - Pre-built executable (`bin/BeamCommander.exe`)
-
-2. **Takes appropriate action:**
-   - If VS project files exist → Builds from source using MSBuild
-   - If pre-built exe exists → Uses the pre-built executable
-   - If neither exists → Fails with helpful error message
-
-3. **Packages the result** into `BeamCommander-windows.zip`
-
-## Recommendation
-
-**Option 1 (Visual Studio project files)** is recommended because:
-- Builds from source ensure consistency
-- Easier to maintain and update
-- Smaller repository size (no large .exe files)
-- Better for version control
-
-**Option 2 (Pre-built executable)** is simpler but:
-- Requires manual rebuilding for each change
-- Larger repository size
-- Harder to track changes in the binary
-
-## Testing Locally
-
-Before pushing to GitHub, you can test the build locally:
-
-### With Visual Studio:
-```powershell
-cd openframeworks-src-master/apps/myApps/BeamCommander
-msbuild BeamCommander.sln /p:Configuration=Release /p:Platform=x64
-```
-
-### Check the output:
-```powershell
-cd bin
-dir BeamCommander.exe
-```
-
-## Need Help?
-
-If you encounter issues:
-1. Verify openFrameworks is properly installed on Windows
-2. Ensure all addons (ofxLaser, ofxMidi, ofxOsc) are in the addons folder
-3. Check that the Visual Studio project targets the correct Windows SDK version
-4. Make sure all required DLLs are in the bin folder
-
-## Current Error Explained
-
-The error you're seeing:
-```
-couldn't find cairo zlib openssl freetype2 glew glfw3 glm libcurl liburiparser nlohmann_json openal pugixml rtaudio
-```
-
-This occurs because the workflow tried to use `make` (Unix-style build), which requires:
-- MinGW/MSYS2 environment
-- pkg-config
-- All openFrameworks dependencies compiled for MinGW
-
-This is complex to set up in GitHub Actions, so using Visual Studio (Option 1) or pre-built binaries (Option 2) is much simpler.
+No Windows runners, Visual Studio, or MSBuild needed!

@@ -126,13 +126,26 @@ class BeamCommanderUI {
     }
     
     async sendOSC(address, args) {
-        // In a real implementation, this would send OSC via WebSocket or HTTP proxy
-        // For now, we'll just log it
         console.log('OSC:', address, args);
         
-        // Note: Since we can't send OSC directly from browser,
-        // this would need a WebSocket bridge or HTTP-to-OSC proxy
-        // For demonstration, we're showing the UI only
+        try {
+            const response = await fetch(`${this.apiBase}/api/osc`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    address: address,
+                    args: args
+                })
+            });
+            
+            if (!response.ok) {
+                console.error('Failed to send OSC:', response.statusText);
+            }
+        } catch (error) {
+            console.error('Error sending OSC:', error);
+        }
     }
     
     async fetchShapes() {
@@ -166,34 +179,50 @@ class BeamCommanderUI {
             return;
         }
         
-        // Draw points
+        // Draw with laser-like glow effect
         this.ctx.lineCap = 'round';
         this.ctx.lineJoin = 'round';
         
-        for (let i = 0; i < data.points.length - 1; i++) {
-            const [x1, y1, r1, g1, b1] = data.points[i];
-            const [x2, y2, r2, g2, b2] = data.points[i + 1];
+        // Draw multiple passes for glow effect
+        // Outer glow (widest, most transparent)
+        this.drawPass(data.points, 8, 0.15);
+        this.drawPass(data.points, 5, 0.3);
+        this.drawPass(data.points, 3, 0.6);
+        // Core beam (brightest)
+        this.drawPass(data.points, 1.5, 1.0);
+        
+        // Draw bright points at vertices for extra sparkle
+        data.points.forEach(([x, y, r, g, b]) => {
+            const gradient = this.ctx.createRadialGradient(x, y, 0, x, y, 3);
+            gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 1.0)`);
+            gradient.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, 0.6)`);
+            gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0.0)`);
+            
+            this.ctx.fillStyle = gradient;
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, 3, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
+    }
+    
+    drawPass(points, lineWidth, alpha) {
+        // Draw lines with specified width and alpha
+        for (let i = 0; i < points.length - 1; i++) {
+            const [x1, y1, r1, g1, b1] = points[i];
+            const [x2, y2, r2, g2, b2] = points[i + 1];
             
             // Create gradient for smooth color transitions
             const gradient = this.ctx.createLinearGradient(x1, y1, x2, y2);
-            gradient.addColorStop(0, `rgb(${r1}, ${g1}, ${b1})`);
-            gradient.addColorStop(1, `rgb(${r2}, ${g2}, ${b2})`);
+            gradient.addColorStop(0, `rgba(${r1}, ${g1}, ${b1}, ${alpha})`);
+            gradient.addColorStop(1, `rgba(${r2}, ${g2}, ${b2}, ${alpha})`);
             
             this.ctx.strokeStyle = gradient;
-            this.ctx.lineWidth = 2;
+            this.ctx.lineWidth = lineWidth;
             this.ctx.beginPath();
             this.ctx.moveTo(x1, y1);
             this.ctx.lineTo(x2, y2);
             this.ctx.stroke();
         }
-        
-        // Draw points for dotted effect
-        data.points.forEach(([x, y, r, g, b]) => {
-            this.ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-            this.ctx.beginPath();
-            this.ctx.arc(x, y, 1, 0, Math.PI * 2);
-            this.ctx.fill();
-        });
     }
     
     async updateCanvas() {

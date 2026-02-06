@@ -104,6 +104,70 @@ class BeamCommanderServer:
                 'osc_port': self.osc_port,
                 'uptime': time.time() - self.start_time
             })
+        
+        @self.app.route('/api/osc', methods=['POST'])
+        def send_osc():
+            """Send OSC command from web UI"""
+            from flask import request
+            data = request.get_json()
+            if not data or 'address' not in data:
+                return jsonify({'error': 'Invalid request'}), 400
+            
+            address = data['address']
+            args = data.get('args', [])
+            
+            # Simulate OSC message by calling the appropriate handler
+            try:
+                # Find the handler for this address
+                if address == '/laser/shape' and args:
+                    self.osc_receiver._handle_shape(address, *args)
+                elif address == '/laser/color':
+                    self.osc_receiver._handle_color(address, *args)
+                elif address == '/laser/brightness' and args:
+                    self.osc_receiver._handle_brightness(address, *args)
+                elif address == '/laser/dotted' and args:
+                    self.osc_receiver._handle_dotted(address, *args)
+                elif address == '/laser/flicker' and args:
+                    self.osc_receiver._handle_flicker(address, *args)
+                elif address == '/laser/position':
+                    self.osc_receiver._handle_position(address, *args)
+                elif address == '/laser/position/x' and args:
+                    self.osc_receiver._handle_position_x(address, *args)
+                elif address == '/laser/position/y' and args:
+                    self.osc_receiver._handle_position_y(address, *args)
+                elif address == '/laser/shape/scale' and args:
+                    self.osc_receiver._handle_scale(address, *args)
+                elif address == '/laser/rotation/speed' and args:
+                    self.osc_receiver._handle_rotation_speed(address, *args)
+                elif address == '/laser/wave/frequency' and args:
+                    self.osc_receiver._handle_wave_frequency(address, *args)
+                elif address == '/laser/wave/amplitude' and args:
+                    self.osc_receiver._handle_wave_amplitude(address, *args)
+                elif address == '/laser/wave/speed' and args:
+                    self.osc_receiver._handle_wave_speed(address, *args)
+                elif address == '/laser/rainbow/amount' and args:
+                    self.osc_receiver._handle_rainbow_amount(address, *args)
+                elif address == '/laser/rainbow/speed' and args:
+                    self.osc_receiver._handle_rainbow_speed(address, *args)
+                elif address == '/laser/rainbow/blend' and args:
+                    self.osc_receiver._handle_rainbow_blend(address, *args)
+                elif address == '/move/mode' and args:
+                    self.osc_receiver._handle_move_mode(address, *args)
+                elif address == '/move/size' and args:
+                    self.osc_receiver._handle_move_size(address, *args)
+                elif address == '/move/speed' and args:
+                    self.osc_receiver._handle_move_speed(address, *args)
+                elif address == '/flash' and args:
+                    self.osc_receiver._handle_flash(address, *args)
+                elif address == '/blackout' and args:
+                    self.osc_receiver._handle_blackout(address, *args)
+                else:
+                    return jsonify({'error': 'Unknown OSC address'}), 400
+                
+                return jsonify({'success': True})
+            except Exception as e:
+                logger.error(f"Error handling OSC command: {e}")
+                return jsonify({'error': str(e)}), 500
     
     def start(self):
         """Start the BeamCommander server"""

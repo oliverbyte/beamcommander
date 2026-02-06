@@ -1827,7 +1827,7 @@ void ofApp::handleHttpRequest(int clientID, const std::string& request) {
         
         // Give a small delay for data to be sent before disconnecting
         // ofxTCPServer's send() is typically non-blocking
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        ofSleepMillis(10);
         httpServer.disconnectClient(clientID);
     } else {
         ofLogWarning() << "Received non-GET or malformed HTTP request";

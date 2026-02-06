@@ -14,9 +14,7 @@
 
 // HTTP server for headless mode
 #include "ofxTCPServer.h"
-#include <thread>
 #include <atomic>
-#include <chrono>
 
 
 class ofApp : public ofBaseApp{

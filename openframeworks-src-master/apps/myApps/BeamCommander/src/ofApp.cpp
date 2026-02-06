@@ -1771,7 +1771,8 @@ void ofApp::loadCuesFromDisk(){
 void ofApp::startHttpServer() {
     try {
         httpServer.setup(httpPort);
-        httpServer.setMessageDelimiter("\n");
+        // Note: ofxTCPServer may not support delimiters the same way as raw HTTP
+        // We'll read raw data and parse HTTP requests manually
         httpServerRunning.store(true);
         ofLogNotice() << "HTTP server started on port " << httpPort;
         ofLogNotice() << "Access web preview at: http://localhost:" << httpPort;
@@ -1790,10 +1791,18 @@ void ofApp::stopHttpServer() {
 }
 
 void ofApp::handleHttpRequest(int clientID, const std::string& request) {
-    // Parse HTTP request
+    // Validate request has minimum HTTP structure
+    if (request.length() < 14) {  // Minimum: "GET / HTTP/1.1"
+        ofLogWarning() << "Received malformed HTTP request (too short)";
+        httpServer.disconnectClient(clientID);
+        return;
+    }
+    
+    // Parse HTTP request - look for complete request with method and path
     std::string response;
     
-    if (request.find("GET /") != std::string::npos) {
+    // Check for valid HTTP GET request
+    if (request.find("GET ") == 0 && request.find(" HTTP/") != std::string::npos) {
         if (request.find("GET / HTTP") != std::string::npos || 
             request.find("GET /index.html") != std::string::npos) {
             // Serve the main viewer page
@@ -1811,7 +1820,17 @@ void ofApp::handleHttpRequest(int clientID, const std::string& request) {
             response += notFound;
         }
         
-        httpServer.send(clientID, response);
+        // Send response - ofxTCPServer should handle buffering
+        if (!response.empty()) {
+            httpServer.send(clientID, response);
+        }
+        
+        // Give a small delay for data to be sent before disconnecting
+        // ofxTCPServer's send() is typically non-blocking
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        httpServer.disconnectClient(clientID);
+    } else {
+        ofLogWarning() << "Received non-GET or malformed HTTP request";
         httpServer.disconnectClient(clientID);
     }
 }

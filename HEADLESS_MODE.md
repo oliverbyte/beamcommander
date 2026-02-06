@@ -44,8 +44,8 @@ BeamCommander now supports running in headless mode, allowing the application to
 BeamCommander [OPTIONS]
 
 Options:
-  --headless, -h    Run in headless mode without UI
-  --help            Show help message
+  --headless        Run in headless mode without UI
+  --help, -h        Show help message
 ```
 
 ### Accessing the Web Preview

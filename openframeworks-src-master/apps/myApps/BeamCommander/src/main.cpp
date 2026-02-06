@@ -7,15 +7,15 @@ int main(int argc, char *argv[]){
 	bool headlessMode = false;
 	for (int i = 1; i < argc; i++) {
 		std::string arg = argv[i];
-		if (arg == "--headless" || arg == "-h") {
+		if (arg == "--headless") {
 			headlessMode = true;
 			ofLogNotice() << "Starting BeamCommander in headless mode";
-		} else if (arg == "--help") {
+		} else if (arg == "--help" || arg == "-h") {
 			std::cout << "BeamCommander - Laser Control System" << std::endl;
 			std::cout << "Usage: " << argv[0] << " [OPTIONS]" << std::endl;
 			std::cout << "Options:" << std::endl;
-			std::cout << "  --headless, -h    Run in headless mode without UI" << std::endl;
-			std::cout << "  --help            Show this help message" << std::endl;
+			std::cout << "  --headless        Run in headless mode without UI" << std::endl;
+			std::cout << "  --help, -h        Show this help message" << std::endl;
 			std::cout << std::endl;
 			std::cout << "Headless Mode:" << std::endl;
 			std::cout << "  When running headless, the application will:" << std::endl;
@@ -29,9 +29,11 @@ int main(int argc, char *argv[]){
 	}
 
 	if (headlessMode) {
-		// Headless mode: no window, console only
+		// Headless mode: window created but can be hidden/minimized
+		// Note: OpenFrameworks still needs a GL context for laser rendering
+		// The 800x800 size matches the laser canvas used for DAC output
 		ofGLFWWindowSettings settings;
-		settings.setSize(800, 800);  // Virtual canvas size for rendering
+		settings.setSize(800, 800);
 		settings.setGLVersion(3, 2);
 		ofCreateWindow(settings);
 		ofSetWindowTitle("BeamCommander - Headless Mode");

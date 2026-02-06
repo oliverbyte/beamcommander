@@ -22,7 +22,11 @@ BeamCommander is a free, open-source laser control system that bridges OSC (Open
 
 ### Installation
 
+BeamCommander can be installed in two ways:
+
 #### Option A: Homebrew (Recommended)
+
+The easiest way to install and manage BeamCommander on macOS. Homebrew handles all dependencies and provides easy updates.
 
 ```bash
 # Add the BeamCommander tap
@@ -35,7 +39,11 @@ brew install beamcommander
 beamcommander
 ```
 
-#### Option B: Download Pre-built Binary
+To update: `brew update && brew upgrade beamcommander`
+
+#### Option B: macOS Application Bundle
+
+Download a traditional macOS `.app` bundle for drag-and-drop installation.
 
 1. **Download the Release Binary**
    - Go to the [Releases](https://github.com/oliverbyte/beamcommander/releases) page
@@ -45,6 +53,8 @@ beamcommander
 2. **Run BeamCommander**
    - Double-click `BeamCommander.app` or run it from terminal
    - The application will start listening for OSC commands on UDP port 9000
+
+For detailed installation instructions, see [INSTALL.md](INSTALL.md).
 
 ### Initial Setup
 

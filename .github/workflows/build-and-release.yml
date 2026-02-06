@@ -261,7 +261,18 @@ jobs:
       id: changelog
       run: |
         # Extract recent commits for changelog
-        echo "## Changes" > CHANGELOG.md
+        echo "## Installation" > CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "### Homebrew (Recommended)" >> CHANGELOG.md
+        echo "\`\`\`bash" >> CHANGELOG.md
+        echo "brew tap oliverbyte/beamcommander https://github.com/oliverbyte/beamcommander" >> CHANGELOG.md
+        echo "brew install beamcommander" >> CHANGELOG.md
+        echo "\`\`\`" >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "### macOS Application Bundle" >> CHANGELOG.md
+        echo "Download the \`.tar.gz\` or \`.zip\` file below and extract it." >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "## Changes" >> CHANGELOG.md
         echo "" >> CHANGELOG.md
         git log --oneline -10 --pretty=format:"- %s (%an)" >> CHANGELOG.md || echo "- Release build" >> CHANGELOG.md
         echo "" >> CHANGELOG.md
@@ -270,6 +281,8 @@ jobs:
         echo "- **Built on**: $(date)" >> CHANGELOG.md
         echo "- **Commit**: ${{ github.sha }}" >> CHANGELOG.md
         echo "- **Tag**: ${{ github.ref_name }}" >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "For detailed installation instructions, see [INSTALL.md](https://github.com/oliverbyte/beamcommander/blob/main/INSTALL.md)." >> CHANGELOG.md
         
     - name: Prepare release files
       run: |

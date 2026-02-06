@@ -37,6 +37,8 @@ BeamCommander 2.0 is a complete rewrite in Python, making it a truly generic and
    ```
 
 3. **Run the server**
+   
+   Basic mode (visualization only):
    ```bash
    ./start.sh
    ```
@@ -44,6 +46,16 @@ BeamCommander 2.0 is a complete rewrite in Python, making it a truly generic and
    Or directly:
    ```bash
    python3 -m beamcommander.server
+   ```
+   
+   **With EtherDream DAC output:**
+   ```bash
+   python3 -m beamcommander.server --enable-dac
+   ```
+   
+   Or specify DAC IP address:
+   ```bash
+   python3 -m beamcommander.server --enable-dac --dac-ip 10.0.1.100
    ```
 
 4. **Open the web interface**
@@ -56,6 +68,7 @@ BeamCommander 2.0 is a complete rewrite in Python, making it a truly generic and
 - **Operating System**: Linux, macOS, Windows, or any Python-compatible OS
 - **Browser**: Any modern browser (Chrome, Firefox, Safari, Edge)
 - **Network**: For OSC control and web interface
+- **Optional**: EtherDream DAC for laser hardware output
 
 ## 🎮 Usage
 
@@ -154,6 +167,7 @@ beamcommander/
 - **OSCReceiver**: Handles incoming OSC messages and updates state
 - **ShapeGenerator**: Generates point data for various laser shapes
 - **CueManager**: Manages cue save/recall with disk persistence
+- **EtherDreamDAC**: Hardware output driver for EtherDream laser DACs
 - **Flask Server**: Serves web UI and provides REST API
 
 ## 🔧 Configuration
@@ -167,7 +181,27 @@ Options:
   --osc-port PORT      OSC receiver port (default: 9000)
   --http-port PORT     HTTP server port (default: 8080)
   --log-level LEVEL    Logging level: DEBUG|INFO|WARNING|ERROR
+  --enable-dac         Enable EtherDream DAC output
+  --dac-ip IP          EtherDream DAC IP address (default: auto-discover)
 ```
+
+### EtherDream DAC Setup
+
+To output to an EtherDream laser DAC:
+
+1. **Connect your EtherDream DAC** to the network
+2. **Run with DAC enabled:**
+   ```bash
+   # Auto-discover DAC on network
+   python3 -m beamcommander.server --enable-dac
+   
+   # Or specify DAC IP address
+   python3 -m beamcommander.server --enable-dac --dac-ip 192.168.1.100
+   ```
+3. **The server will:**
+   - Discover/connect to the DAC automatically
+   - Stream point data at 30 FPS
+   - Show DAC status in logs
 
 ### Environment Variables
 
@@ -219,13 +253,33 @@ disp.map("/my/command", self._handle_my_command)
 
 ## 🔌 Hardware Integration
 
-BeamCommander 2.0 provides an abstraction layer for laser hardware. To connect to actual laser DACs:
+### EtherDream DAC (Built-in Support)
 
-1. Create a `laser_output.py` module with your DAC driver
-2. Implement the point streaming to your hardware
-3. Use the shape generator output to drive your DAC
+BeamCommander 2.0 includes **native EtherDream DAC support**:
 
-Example integration:
+```bash
+# Enable DAC output with auto-discovery
+python3 -m beamcommander.server --enable-dac
+
+# Or specify DAC IP address
+python3 -m beamcommander.server --enable-dac --dac-ip 10.0.1.100
+```
+
+**Features:**
+- Automatic DAC discovery via network broadcast
+- 30 FPS point streaming
+- Automatic reconnection on connection loss
+- Thread-safe operation
+
+**Protocol Details:**
+- Discovery: UDP port 7654
+- Command/Data: TCP port 7765  
+- Point rate: 30,000 PPS (configurable)
+- Coordinates: Normalized [-1..1] converted to DAC format
+
+### Custom DAC Integration
+
+For other DAC types, you can integrate using the shape generator:
 
 ```python
 from beamcommander.shapes import ShapeGenerator

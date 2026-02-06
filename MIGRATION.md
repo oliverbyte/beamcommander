@@ -154,7 +154,8 @@ disp.map("/laser/mycommand", self._handle_my_command)
 | Movement Patterns | ✅ | ✅ | All preserved |
 | Cue System | ✅ | ✅ | Not file-compatible |
 | MIDI Support | ✅ | 🚧 | Planned |
-| Laser DAC Support | ✅ | 🔧 | Requires custom driver |
+| EtherDream DAC | ✅ | ✅ | Built-in support via --enable-dac |
+| Other DACs | ✅ | 🔧 | Custom integration required |
 | Cross-platform | ❌ | ✅ | Linux/Mac/Windows |
 | Easy Installation | ❌ | ✅ | Single command |
 
@@ -171,7 +172,17 @@ Legend: ✅ Available | ❌ Not Available | 🚧 In Progress | 🔧 Custom Integ
 
 ### Issue: "No laser output to my DAC"
 
-**Solution**: Python version provides abstraction layer only. You need to:
+**Solution for EtherDream DACs:**
+```bash
+# Enable DAC output
+python3 -m beamcommander.server --enable-dac
+
+# Or specify DAC IP if auto-discovery fails
+python3 -m beamcommander.server --enable-dac --dac-ip 192.168.1.100
+```
+
+**Solution for other DAC types:**
+Python version provides abstraction layer only. You need to:
 1. Identify your DAC model
 2. Find/write Python driver for your DAC
 3. Integrate with shape generator output

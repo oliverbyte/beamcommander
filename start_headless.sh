@@ -44,9 +44,12 @@ done
 # Navigate to BeamCommander directory
 cd "$(dirname "$0")/openframeworks-src-master/apps/myApps/BeamCommander"
 
-# Check if application is built
+# Check if application is built (macOS bundle structure)
+# Note: This script is designed for macOS. Linux/Windows users should
+# adjust the path to point to the appropriate executable location.
 if [ ! -f "bin/BeamCommander.app/Contents/MacOS/BeamCommander" ]; then
     echo "BeamCommander not found! Run ./build.sh first to build the application."
+    echo "Note: This script expects macOS .app bundle structure."
     exit 1
 fi
 

@@ -78,6 +78,9 @@ void ofApp::setup(){
     state->rotationSpeedTarget.store(state->rotationSpeed.load());
     state->dotAmountTarget.store(state->dotAmount.load());
     
+    // Start HTTP server for headless mode preview
+    startHttpServer();
+    
 }
 
 //--------------------------------------------------------------
@@ -168,6 +171,17 @@ void ofApp::update(){
     }
 
     updateOsc();
+    
+    // Handle HTTP server requests for headless mode
+    if (httpServerRunning.load()) {
+        // Check for new connections and handle requests
+        for (int i = 0; i < httpServer.getNumClients(); i++) {
+            std::string msg = httpServer.receive(i);
+            if (!msg.empty()) {
+                handleHttpRequest(i, msg);
+            }
+        }
+    }
 
     // After processing any new OSC/MIDI messages this frame, smoothly slew current manual position
     // and scale toward targets. Adaptive exponential smoothing: ultra-fine blending for tiny knob moves
@@ -763,6 +777,16 @@ void ofApp::draw() {
 
 void ofApp::exit(){
     ofLogNotice() << "Exit called - performing safe cleanup";
+    
+    // Stop HTTP server first
+    try {
+        stopHttpServer();
+        ofLogNotice() << "HTTP server stopped";
+    } catch(const std::exception& e) {
+        ofLogError() << "Error stopping HTTP server: " << e.what();
+    } catch(...) {
+        ofLogError() << "Unknown error stopping HTTP server";
+    }
     
     try {
         // Clean shutdown of MIDI mapper first
@@ -1739,4 +1763,385 @@ void ofApp::loadCuesFromDisk(){
 }
 
 // Joystick functionality completely removed to prevent crashes
+
+//--------------------------------------------------------------
+// HTTP Server for Headless Mode
+//--------------------------------------------------------------
+
+void ofApp::startHttpServer() {
+    try {
+        httpServer.setup(httpPort);
+        httpServer.setMessageDelimiter("\n");
+        httpServerRunning.store(true);
+        ofLogNotice() << "HTTP server started on port " << httpPort;
+        ofLogNotice() << "Access web preview at: http://localhost:" << httpPort;
+    } catch(const std::exception& e) {
+        ofLogError() << "Failed to start HTTP server: " << e.what();
+        httpServerRunning.store(false);
+    }
+}
+
+void ofApp::stopHttpServer() {
+    if (httpServerRunning.load()) {
+        httpServer.close();
+        httpServerRunning.store(false);
+        ofLogNotice() << "HTTP server stopped";
+    }
+}
+
+void ofApp::handleHttpRequest(int clientID, const std::string& request) {
+    // Parse HTTP request
+    std::string response;
+    
+    if (request.find("GET /") != std::string::npos) {
+        if (request.find("GET / HTTP") != std::string::npos || 
+            request.find("GET /index.html") != std::string::npos) {
+            // Serve the main viewer page
+            response = getHttpResponse(getWebViewerHtml(), "text/html");
+        } else if (request.find("GET /api/laser") != std::string::npos) {
+            // Serve laser state as JSON
+            response = getHttpResponse(getLaserStateJson(), "application/json");
+        } else {
+            // 404 Not Found
+            std::string notFound = "<html><body><h1>404 Not Found</h1></body></html>";
+            response = "HTTP/1.1 404 Not Found\r\n";
+            response += "Content-Type: text/html\r\n";
+            response += "Content-Length: " + std::to_string(notFound.length()) + "\r\n";
+            response += "Connection: close\r\n\r\n";
+            response += notFound;
+        }
+        
+        httpServer.send(clientID, response);
+        httpServer.disconnectClient(clientID);
+    }
+}
+
+std::string ofApp::getHttpResponse(const std::string& content, const std::string& contentType) {
+    std::string response;
+    response += "HTTP/1.1 200 OK\r\n";
+    response += "Content-Type: " + contentType + "\r\n";
+    response += "Content-Length: " + std::to_string(content.length()) + "\r\n";
+    response += "Access-Control-Allow-Origin: *\r\n";
+    response += "Connection: close\r\n\r\n";
+    response += content;
+    return response;
+}
+
+std::string ofApp::getLaserStateJson() {
+    // Create JSON representation of current laser state
+    std::string json = "{\n";
+    json += "  \"shape\": \"" + shapeToString(state->shape.load()) + "\",\n";
+    json += "  \"color\": \"" + colorToString(state->colorSel.load()) + "\",\n";
+    json += "  \"customColor\": {";
+    json += "\"r\": " + std::to_string(state->r.load()) + ", ";
+    json += "\"g\": " + std::to_string(state->g.load()) + ", ";
+    json += "\"b\": " + std::to_string(state->b.load()) + "},\n";
+    json += "  \"brightness\": " + std::to_string(state->masterBrightness.load()) + ",\n";
+    json += "  \"position\": {\"x\": " + std::to_string(state->posNormX.load());
+    json += ", \"y\": " + std::to_string(state->posNormY.load()) + "},\n";
+    json += "  \"scale\": " + std::to_string(state->shapeScale.load()) + ",\n";
+    json += "  \"rotation\": " + std::to_string(rotationAngleRad) + ",\n";
+    json += "  \"rotationSpeed\": " + std::to_string(state->rotationSpeed.load()) + ",\n";
+    json += "  \"dotAmount\": " + std::to_string(state->dotAmount.load()) + ",\n";
+    json += "  \"movement\": {\n";
+    json += "    \"mode\": " + std::to_string((int)state->movement.load()) + ",\n";
+    json += "    \"speed\": " + std::to_string(state->moveSpeed.load()) + ",\n";
+    json += "    \"size\": " + std::to_string(state->moveSize.load()) + "\n";
+    json += "  },\n";
+    json += "  \"wave\": {\n";
+    json += "    \"frequency\": " + std::to_string(state->waveFrequency.load()) + ",\n";
+    json += "    \"amplitude\": " + std::to_string(state->waveAmplitude.load()) + ",\n";
+    json += "    \"speed\": " + std::to_string(state->waveSpeed.load()) + ",\n";
+    json += "    \"phase\": " + std::to_string(wavePhaseRad) + "\n";
+    json += "  },\n";
+    json += "  \"rainbow\": {\n";
+    json += "    \"speed\": " + std::to_string(state->rainbowSpeed.load()) + ",\n";
+    json += "    \"amount\": " + std::to_string(state->rainbowAmount.load()) + ",\n";
+    json += "    \"blend\": " + std::to_string(state->rainbowBlend.load()) + "\n";
+    json += "  },\n";
+    json += "  \"scanRate\": " + std::to_string(state->scanRateHz.load()) + ",\n";
+    json += "  \"timestamp\": " + std::to_string(ofGetElapsedTimeMillis()) + "\n";
+    json += "}\n";
+    return json;
+}
+
+std::string ofApp::getWebViewerHtml() {
+    return R"html(<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BeamCommander - 3D Laser Preview</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            font-family: 'Arial', sans-serif;
+            color: #fff;
+            overflow: hidden;
+        }
+        #container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        #header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            border: 2px solid #667eea;
+            box-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            line-height: 1.6;
+            min-width: 200px;
+            backdrop-filter: blur(10px);
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .info-label {
+            color: #667eea;
+            font-weight: bold;
+        }
+        .info-value {
+            color: #fff;
+            text-align: right;
+        }
+        #status {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+        .status-connected {
+            color: #00ff00;
+        }
+        .status-error {
+            color: #ff0000;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="header">
+            <h1>💎 BeamCommander - 3D Laser Preview</h1>
+        </div>
+        <div id="canvas-container">
+            <canvas id="canvas" width="800" height="800"></canvas>
+            <div id="info">
+                <div class="info-row">
+                    <span class="info-label">Shape:</span>
+                    <span class="info-value" id="shape">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Color:</span>
+                    <span class="info-value" id="color">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Brightness:</span>
+                    <span class="info-value" id="brightness">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Position:</span>
+                    <span class="info-value" id="position">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Scale:</span>
+                    <span class="info-value" id="scale">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Rotation:</span>
+                    <span class="info-value" id="rotation">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Movement:</span>
+                    <span class="info-value" id="movement">-</span>
+                </div>
+            </div>
+            <div id="status">
+                <span id="status-text" class="status-connected">● Connected</span>
+            </div>
+        </div>
+    </div>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const W = 800;
+        const H = 800;
+        
+        let laserState = null;
+        let lastUpdate = 0;
+        
+        // Movement type names
+        const movementNames = ['None', 'Circle', 'Pan', 'Tilt', 'Figure-8', 'Random'];
+        
+        function updateLaserState() {
+            fetch('/api/laser')
+                .then(response => response.json())
+                .then(data => {
+                    laserState = data;
+                    lastUpdate = Date.now();
+                    document.getElementById('status-text').className = 'status-connected';
+                    document.getElementById('status-text').textContent = '● Connected';
+                    updateInfo();
+                })
+                .catch(error => {
+                    document.getElementById('status-text').className = 'status-error';
+                    document.getElementById('status-text').textContent = '● Connection Error';
+                    console.error('Error fetching laser state:', error);
+                });
+        }
+        
+        function updateInfo() {
+            if (!laserState) return;
+            
+            document.getElementById('shape').textContent = laserState.shape;
+            document.getElementById('color').textContent = laserState.color;
+            document.getElementById('brightness').textContent = (laserState.brightness * 100).toFixed(0) + '%';
+            document.getElementById('position').textContent = 
+                `${laserState.position.x.toFixed(2)}, ${laserState.position.y.toFixed(2)}`;
+            document.getElementById('scale').textContent = laserState.scale.toFixed(2);
+            document.getElementById('rotation').textContent = 
+                (laserState.rotation * 180 / Math.PI).toFixed(0) + '°';
+            document.getElementById('movement').textContent = 
+                movementNames[laserState.movement.mode] || 'Unknown';
+        }
+        
+        function drawLaser() {
+            ctx.fillStyle = '#050510';
+            ctx.fillRect(0, 0, W, H);
+            
+            if (!laserState) return;
+            
+            ctx.save();
+            ctx.translate(W / 2, H / 2);
+            
+            // Apply position (normalized -1 to 1, scale to canvas)
+            const px = laserState.position.x * (W / 2);
+            const py = -laserState.position.y * (H / 2);
+            ctx.translate(px, py);
+            
+            // Apply rotation
+            ctx.rotate(laserState.rotation);
+            
+            // Apply scale
+            const scale = Math.abs(laserState.scale) * 300;
+            
+            // Get color
+            const color = getColor(laserState);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            
+            // Draw shape
+            ctx.beginPath();
+            switch (laserState.shape.toLowerCase()) {
+                case 'circle':
+                    ctx.arc(0, 0, scale, 0, Math.PI * 2);
+                    break;
+                case 'line':
+                    ctx.moveTo(-scale, 0);
+                    ctx.lineTo(scale, 0);
+                    break;
+                case 'triangle':
+                    ctx.moveTo(0, -scale);
+                    ctx.lineTo(scale * 0.866, scale * 0.5);
+                    ctx.lineTo(-scale * 0.866, scale * 0.5);
+                    ctx.closePath();
+                    break;
+                case 'square':
+                    ctx.rect(-scale * 0.7, -scale * 0.7, scale * 1.4, scale * 1.4);
+                    break;
+                case 'wave':
+                case 'staticwave':
+                    drawWave(ctx, scale, laserState);
+                    break;
+            }
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+        
+        function drawWave(ctx, scale, state) {
+            const freq = state.wave.frequency;
+            const amp = state.wave.amplitude * scale;
+            const phase = state.wave.phase;
+            const points = 100;
+            
+            ctx.moveTo(-scale, Math.sin(-freq * Math.PI + phase) * amp);
+            for (let i = 1; i <= points; i++) {
+                const x = -scale + (2 * scale * i / points);
+                const t = (x / scale) * freq * Math.PI;
+                const y = Math.sin(t + phase) * amp;
+                ctx.lineTo(x, y);
+            }
+        }
+        
+        function getColor(state) {
+            const b = state.brightness;
+            if (state.color === 'Blue') {
+                return `rgb(0, 0, ${Math.floor(255 * b)})`;
+            } else if (state.color === 'Red') {
+                return `rgb(${Math.floor(255 * b)}, 0, 0)`;
+            } else if (state.color === 'Green') {
+                return `rgb(0, ${Math.floor(255 * b)}, 0)`;
+            } else {
+                // Custom RGB
+                const r = Math.floor(state.customColor.r * 255 * b);
+                const g = Math.floor(state.customColor.g * 255 * b);
+                const bl = Math.floor(state.customColor.b * 255 * b);
+                return `rgb(${r}, ${g}, ${bl})`;
+            }
+        }
+        
+        function animate() {
+            drawLaser();
+            requestAnimationFrame(animate);
+        }
+        
+        // Update laser state every 50ms (20 FPS)
+        setInterval(updateLaserState, 50);
+        
+        // Initial fetch
+        updateLaserState();
+        
+        // Start animation
+        animate();
+    </script>
+</body>
+</html>
+)html";
+}
+
 

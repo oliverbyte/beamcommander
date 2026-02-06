@@ -12,6 +12,11 @@
 
 // Joystick support removed
 
+// HTTP server for headless mode
+#include "ofxTCPServer.h"
+#include <thread>
+#include <atomic>
+
 
 class ofApp : public ofBaseApp{
 	
@@ -138,6 +143,17 @@ public:
 	double prevMoveTimeCycles = 0.0;
 
 	// Joystick support removed
+	
+	// HTTP server for headless mode - serves laser state and 3D preview
+	ofxTCPServer httpServer;
+	std::atomic<bool> httpServerRunning{false};
+	int httpPort = 8080;
+	void startHttpServer();
+	void stopHttpServer();
+	void handleHttpRequest(int clientID, const std::string& request);
+	std::string getLaserStateJson();
+	std::string getHttpResponse(const std::string& content, const std::string& contentType = "text/html");
+	std::string getWebViewerHtml();
     
 };
 

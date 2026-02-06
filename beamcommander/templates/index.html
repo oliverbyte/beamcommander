@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BeamCommander 2.0 - Laser Control</title>
-    <!-- Three.js for WebGL 3D rendering -->
-    <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -219,7 +217,7 @@
         
         <main>
             <div id="canvas-container">
-                <div id="laser-canvas"></div>
+                <canvas id="laser-canvas"></canvas>
             </div>
             
             <div id="controls">
@@ -333,6 +331,6 @@
         </footer>
     </div>
     
-    <script src="{{ url_for('static', filename='app_webgl.js') }}"></script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>

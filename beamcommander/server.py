@@ -242,7 +242,11 @@ class BeamCommanderServer:
             logger.info(f"  DAC Output: ENABLED")
         logger.info("=" * 60)
         
-        # Run Flask in main thread
+        # Run Flask in main thread (disable request logging)
+        import logging as flask_logging
+        flask_log = flask_logging.getLogger('werkzeug')
+        flask_log.setLevel(flask_logging.ERROR)  # Only show errors, not every request
+        
         self.app.run(host='0.0.0.0', port=self.http_port, debug=False, threaded=True)
     
     def stop(self):

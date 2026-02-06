@@ -2,51 +2,59 @@
 
 This guide explains how to set up Windows builds for BeamCommander in the GitHub Actions workflow.
 
-## Current Status
+## Current Status ✅
 
-The Windows build currently fails because there are no Visual Studio project files (`.sln`/`.vcxproj`) in the repository, and building with `make` on Windows requires complex MinGW/MSYS2 setup that isn't configured.
+**Windows build is now configured!** Visual Studio project files have been added to the repository and the GitHub Actions workflow is ready to build Windows releases.
 
-## Solutions
+## What's Included
 
-You have two options to enable Windows builds:
+The repository now contains:
+- `BeamCommander.sln` - Visual Studio 2019 solution file
+- `BeamCommander.vcxproj` - Visual Studio project file with all addons configured
+- `BeamCommander.vcxproj.filters` - Project filters
+- `icon.rc` - Icon resource file
+- `icon.ico` and `icon_debug.ico` - Application icons
 
-### Option 1: Add Visual Studio Project Files (Recommended)
+All required addons are configured:
+- ofxLaser
+- ofxMidi
+- ofxOsc
+- ofxOpenCv
+- ofxNetwork
+- ofxPoco
 
-This allows the GitHub Actions workflow to build from source on Windows.
+## How to Trigger a Windows Build
 
-#### Steps:
+To create a Windows release, simply create and push a tag with the pattern `v*-windows`:
 
-1. **On a Windows machine with openFrameworks installed:**
-   
-   Open openFrameworks projectGenerator:
-   ```
-   openframeworks-src-master/projectGenerator.exe
-   ```
+```bash
+# Create a test tag
+git tag v1.0-test-windows
 
-2. **Configure the project:**
-   - Import the existing BeamCommander project
-   - Set project path to: `apps/myApps/BeamCommander`
-   - Add all the addons used in `addons.make`:
-     - ofxLaser
-     - ofxMidi
-     - ofxOsc
-   - Click "Generate"
+# Push the tag to GitHub
+git push origin v1.0-test-windows
+```
 
-3. **Commit the generated files:**
-   ```bash
-   cd openframeworks-src-master/apps/myApps/BeamCommander
-   git add *.sln *.vcxproj *.vcxproj.filters
-   git commit -m "Add Visual Studio project files for Windows build"
-   git push
-   ```
+The GitHub Actions workflow will:
+1. Download the required openFrameworks libraries for Windows
+2. Build BeamCommander using MSBuild
+3. Package the executable with documentation
+4. Create a GitHub release with the Windows build artifact
 
-4. **Test the workflow:**
-   ```bash
-   git tag v1.1-alpha-windows
-   git push origin v1.1-alpha-windows
-   ```
+## Alternative Build Options
 
-### Option 2: Use Pre-built Windows Executable
+### Option 1: Visual Studio Project Files (✅ Already Implemented)
+
+This is the **recommended** and **currently implemented** approach. The Visual Studio project files have been added to the repository.
+
+The workflow will:
+1. Download openFrameworks libraries using `download_libs.ps1`
+2. Build from source using MSBuild
+3. Package the executable
+
+**No additional setup required** - just push a tag to trigger the build!
+
+### Option 2: Use Pre-built Windows Executable (Alternative)
 
 This allows you to include a pre-built Windows executable in the repository for releases.
 

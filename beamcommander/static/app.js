@@ -179,84 +179,84 @@ class BeamCommanderUI {
             return;
         }
         
-        // 3D Perspective Tunnel Effect - Looking INTO the laser beam
-        // Transform 2D points to 3D perspective (audience POV - beam coming at you)
+        // Realistic 3D perspective - single beam coming at you
+        // No multiple rings - just one shape with depth perception through blur/glow
         
         const centerX = this.canvas.width / 2;
         const centerY = this.canvas.height / 2;
-        const depthLayers = 5; // Number of depth layers for tunnel effect
         
         this.ctx.lineCap = 'round';
         this.ctx.lineJoin = 'round';
         
-        // Draw from far to near (back to front) for proper layering
-        for (let layer = depthLayers; layer >= 0; layer--) {
-            const depth = layer / depthLayers; // 0 = near (big), 1 = far (small)
+        // Create perspective effect with motion blur trail
+        // Draw fading trail from center (far) to current position (near)
+        const trailSteps = 8; // Smooth motion blur steps
+        
+        for (let i = trailSteps; i >= 0; i--) {
+            const trailFactor = i / trailSteps; // 0 = current position, 1 = far back
             
-            // Scale factor for perspective (smaller when further away)
-            const scale = 1.0 - (depth * 0.85); // 0.15 to 1.0
+            // Scale toward center for depth (further away = smaller, toward center)
+            const scale = 1.0 - (trailFactor * 0.4); // 0.6 to 1.0
             
-            // Brightness fades with distance (atmospheric perspective)
-            const brightnessScale = 0.3 + (1 - depth) * 0.7; // 0.3 to 1.0
+            // Fade trail exponentially - more recent positions are brighter
+            const fadeAlpha = Math.pow(1 - trailFactor, 2); // Exponential fade
             
-            // Transform and draw points for this depth layer
+            // Transform points toward center for perspective
             const transformed = data.points.map(([x, y, r, g, b]) => {
-                // Center the points
                 const dx = x - centerX;
                 const dy = y - centerY;
                 
-                // Apply perspective scale
+                // Apply perspective scaling
                 const newX = centerX + dx * scale;
                 const newY = centerY + dy * scale;
                 
-                // Adjust brightness for depth
-                const newR = Math.floor(r * brightnessScale);
-                const newG = Math.floor(g * brightnessScale);
-                const newB = Math.floor(b * brightnessScale);
-                
-                return [newX, newY, newR, newG, newB];
+                return [newX, newY, r, g, b];
             });
             
-            // Glow intensity increases as we get closer (more blinding)
-            const glowIntensity = 1 - depth;
-            
-            // Draw this layer with glow effect
-            if (layer < 2) {
-                // Near layers get intense glow (blinding effect)
-                this.drawPass(transformed, 12 * scale, 0.1 * glowIntensity);
-                this.drawPass(transformed, 8 * scale, 0.25 * glowIntensity);
+            // Draw this trail step with appropriate fade
+            // Outer glow for depth
+            if (i <= 2) {
+                // Most recent positions get intense glow
+                this.drawPass(transformed, 15, 0.08 * fadeAlpha);
+                this.drawPass(transformed, 10, 0.15 * fadeAlpha);
             }
-            this.drawPass(transformed, 5 * scale, 0.4 * brightnessScale);
-            this.drawPass(transformed, 3 * scale, 0.7 * brightnessScale);
-            this.drawPass(transformed, 1.5 * scale, 1.0 * brightnessScale);
-            
-            // Add bright sparkle points for near layers only
-            if (layer === 0) {
-                transformed.forEach(([x, y, r, g, b]) => {
-                    const gradient = this.ctx.createRadialGradient(x, y, 0, x, y, 5);
-                    gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 1.0)`);
-                    gradient.addColorStop(0.3, `rgba(${r}, ${g}, ${b}, 0.8)`);
-                    gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0.0)`);
-                    
-                    this.ctx.fillStyle = gradient;
-                    this.ctx.beginPath();
-                    this.ctx.arc(x, y, 5, 0, Math.PI * 2);
-                    this.ctx.fill();
-                });
-            }
+            this.drawPass(transformed, 6, 0.3 * fadeAlpha);
+            this.drawPass(transformed, 3, 0.6 * fadeAlpha);
+            this.drawPass(transformed, 1.5, 1.0 * fadeAlpha);
         }
         
-        // Add atmospheric glow bloom in center (audience blinding effect)
+        // Draw the main shape at current position (brightest)
+        // Intense multi-pass glow for laser beam intensity
+        this.drawPass(data.points, 20, 0.05); // Huge outer glow
+        this.drawPass(data.points, 12, 0.12); // Outer glow
+        this.drawPass(data.points, 8, 0.25);  // Mid glow
+        this.drawPass(data.points, 5, 0.5);   // Inner glow
+        this.drawPass(data.points, 3, 0.8);   // Bright core
+        this.drawPass(data.points, 1.5, 1.0); // Pure beam
+        
+        // Add vertex sparkle on main shape
+        data.points.forEach(([x, y, r, g, b]) => {
+            const gradient = this.ctx.createRadialGradient(x, y, 0, x, y, 6);
+            gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 1.0)`);
+            gradient.addColorStop(0.4, `rgba(${r}, ${g}, ${b}, 0.6)`);
+            gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0.0)`);
+            
+            this.ctx.fillStyle = gradient;
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, 6, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
+        
+        // Subtle center bloom for depth atmosphere (much more subtle than before)
         const centerGlow = this.ctx.createRadialGradient(
             centerX, centerY, 0,
-            centerX, centerY, Math.min(this.canvas.width, this.canvas.height) * 0.3
+            centerX, centerY, Math.min(this.canvas.width, this.canvas.height) * 0.25
         );
         
-        // Get average color from first point for bloom
         if (data.points.length > 0) {
             const [_, __, r, g, b] = data.points[0];
-            centerGlow.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.15)`);
-            centerGlow.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, 0.05)`);
+            centerGlow.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.08)`);
+            centerGlow.addColorStop(0.6, `rgba(${r}, ${g}, ${b}, 0.02)`);
             centerGlow.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0.0)`);
             
             this.ctx.fillStyle = centerGlow;

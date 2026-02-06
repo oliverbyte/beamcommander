@@ -1,12 +1,14 @@
 # BeamCommander - Laser Control System
 
-💎 **Free & Open Source** | 🤝 **Community Driven** | ✨ **Live Performance Ready**
+💎 **Free & Open Source** | 🤝 **Community Driven** | ✨ **Live Performance Ready** | 🖥️ **Headless Mode Supported**
 
-📚 [Website](https://oliverbyte.github.io/beamcommander/) | 💬 [Discussions](https://github.com/oliverbyte/BeamCommander/discussions)
+📚 [Website](https://oliverbyte.github.io/beamcommander/) | 💬 [Discussions](https://github.com/oliverbyte/BeamCommander/discussions) | 🔧 [Headless Mode Guide](HEADLESS_MODE.md)
 
 BeamCommander is a free, open-source laser control system that bridges OSC (Open Sound Control) commands with laser hardware, providing real-time visual effects for performances and installations. Developed and supported by a passionate community of artists, developers, and laser enthusiasts.
 
 **Live Performance Ready**: Control your lasers in real-time using an Akai APC40 MIDI controller and/or intuitive web interface. Designed specifically for live performances, VJ sets, and externally controlled laser shows via OSC commands. Perfect for artists, performers, and installation designers who need responsive, tactile control over complex laser visuals.
+
+**Headless Mode**: Run without UI for server deployments and remote installations. Includes web-based 3D preview accessible via browser. See [HEADLESS_MODE.md](HEADLESS_MODE.md) for details.
 
 ## Demo
 
@@ -28,8 +30,19 @@ BeamCommander is a free, open-source laser control system that bridges OSC (Open
    - Extract the downloaded archive
 
 2. **Run BeamCommander**
-   - Double-click `BeamCommander.app` or run it from terminal
-   - The application will start listening for OSC commands on UDP port 9000
+   
+   **Standard Mode (with UI):**
+   - Double-click `BeamCommander.app` or run `./start_server.sh`
+   - The application will start with a graphical interface
+   - Listening for OSC commands on UDP port 9000
+   
+   **Headless Mode (console only):**
+   - Run `./start_headless.sh` from terminal
+   - No window/UI - all functionality via console
+   - Uses existing config files automatically
+   - Listening for OSC commands on UDP port 9000
+   - 3D preview available at http://localhost:8080
+   - Perfect for servers, remote control, or automated setups
 
 3. **Initial Laser Setup (Required)**
    - **First Time**: The application opens with a configuration interface
@@ -37,6 +50,7 @@ BeamCommander is a free, open-source laser control system that bridges OSC (Open
    - **Zone Mapping**: Create and configure at least one output zone
    - **Test Output**: Verify laser output is working before performance use
    - **Save Configuration**: Settings are automatically saved for future sessions
+   - **Note**: After initial setup, you can use headless mode with saved config
 
 4. **Control Options**
 
@@ -56,6 +70,12 @@ BeamCommander is a free, open-source laser control system that bridges OSC (Open
      - [`open-stage-control-server.config`](openframeworks-src-master/apps/myApps/BeamCommander/open-stage-control-server.config) - Server configuration
      - [`open-stage-control-session.json`](openframeworks-src-master/apps/myApps/BeamCommander/open-stage-control-session.json) - Touch interface layout
    - Access the web interface from any device on your network
+   
+   **Option D: Web Browser Preview (Headless Mode)**
+   - When running in headless mode, open http://localhost:8080
+   - View real-time 3D laser preview with current parameters
+   - Monitor shape, color, position, movement, and effects
+   - No control capabilities - use OSC/MIDI for control
 
 ### Prerequisites
 - macOS 15.6.1 or later
@@ -304,10 +324,26 @@ The AKAI APC40 MK2 is organized into several control zones:
 ## Quick Reference
 
 - `./build.sh` - Build the application (first time or after code changes)
-- `./start_server.sh` - Start BeamCommander laser control server
+- `./start_server.sh` - Start BeamCommander with UI (normal mode)
+- `./start_headless.sh` - Start BeamCommander without UI (headless mode)
 - `./start_open-stage-control.sh` - Start web control interface
 - `DEVELOPER.md` - Technical documentation for developers
 - `LICENSE.md` - Complete licensing information and third-party attributions
+
+### Running Modes
+
+**Standard Mode** (`./start_server.sh`):
+- Graphical user interface for configuration
+- Laser preview in application window
+- Full visual feedback and controls
+
+**Headless Mode** (`./start_headless.sh`):
+- No window/UI - runs in console
+- Perfect for servers and remote setups
+- Uses existing configuration files
+- Web preview at http://localhost:8080
+- All OSC commands work identically
+- MIDI controllers auto-detected
 
 ## Framework Versions
 

@@ -2,7 +2,9 @@ class Beamcommander < Formula
   desc "Free & open-source laser control system for live performances"
   homepage "https://oliverbyte.github.io/beamcommander/"
   url "https://github.com/oliverbyte/beamcommander/archive/refs/tags/v1.0.0.tar.gz"
-  sha256 ""
+  # TODO: Update SHA256 after creating the release tag
+  # Calculate with: curl -L <URL> | shasum -a 256
+  sha256 "" # PLACEHOLDER - Must be updated before use
   license "MIT"
   head "https://github.com/oliverbyte/beamcommander.git", branch: "main"
 
@@ -20,7 +22,8 @@ class Beamcommander < Formula
       if File.directory?("bin/BeamCommander.app/Contents/Frameworks")
         lib_dir = lib/"beamcommander"
         lib_dir.mkpath
-        Dir["bin/BeamCommander.app/Contents/Frameworks/*"].each do |framework|
+        # Install all dylib files from Frameworks directory
+        Dir["bin/BeamCommander.app/Contents/Frameworks/*.dylib"].each do |framework|
           lib_dir.install framework
         end
         

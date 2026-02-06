@@ -115,6 +115,13 @@ jobs:
     - name: Setup MSVC
       uses: microsoft/setup-msbuild@v2
       
+    - name: Download openFrameworks libraries
+      run: |
+        echo "Downloading openFrameworks libraries for Windows..."
+        cd openframeworks-src-master/scripts/vs
+        ./download_libs.ps1
+      shell: powershell
+      
     - name: Check for Windows build
       id: check_windows
       run: |

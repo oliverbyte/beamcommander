@@ -1,12 +1,14 @@
 # BeamCommander - Laser Control System
 
-💎 **Free & Open Source** | 🤝 **Community Driven** | ✨ **Live Performance Ready**
+💎 **Free & Open Source** | 🤝 **Community Driven** | ✨ **Live Performance Ready** | 🖥️ **Headless Mode Supported**
 
-📚 [Website](https://oliverbyte.github.io/beamcommander/) | 💬 [Discussions](https://github.com/oliverbyte/BeamCommander/discussions)
+📚 [Website](https://oliverbyte.github.io/beamcommander/) | 💬 [Discussions](https://github.com/oliverbyte/BeamCommander/discussions) | 🔧 [Headless Mode Guide](HEADLESS_MODE.md)
 
 BeamCommander is a free, open-source laser control system that bridges OSC (Open Sound Control) commands with laser hardware, providing real-time visual effects for performances and installations. Developed and supported by a passionate community of artists, developers, and laser enthusiasts.
 
 **Live Performance Ready**: Control your lasers in real-time using an Akai APC40 MIDI controller and/or intuitive web interface. Designed specifically for live performances, VJ sets, and externally controlled laser shows via OSC commands. Perfect for artists, performers, and installation designers who need responsive, tactile control over complex laser visuals.
+
+**Headless Mode**: Run without UI for server deployments and remote installations. Includes web-based 3D preview accessible via browser. See [HEADLESS_MODE.md](HEADLESS_MODE.md) for details.
 
 ## Demo
 

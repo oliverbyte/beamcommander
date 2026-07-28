@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BeamCommander 2.0 - Laser Control</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            color: #ffffff;
+            overflow: hidden;
+        }
+        
+        #app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        header {
+            background: #2a2a2a;
+            padding: 15px 20px;
+            border-bottom: 2px solid #00aaff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        h1 {
+            font-size: 24px;
+            color: #00aaff;
+        }
+        
+        .status {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            font-size: 14px;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #00ff00;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        main {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+        
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            background: #000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        #laser-canvas {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        #controls {
+            width: 350px;
+            background: #2a2a2a;
+            padding: 20px;
+            overflow-y: auto;
+            border-left: 1px solid #444;
+        }
+        
+        .control-group {
+            margin-bottom: 25px;
+        }
+        
+        .control-group h3 {
+            color: #00aaff;
+            margin-bottom: 10px;
+            font-size: 16px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 5px;
+        }
+        
+        .control-item {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 13px;
+            color: #aaa;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: #444;
+            outline: none;
+            border-radius: 2px;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #00aaff;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        
+        .value-display {
+            font-size: 12px;
+            color: #00aaff;
+            float: right;
+        }
+        
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        
+        .button-group.three-col {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        
+        button {
+            padding: 10px;
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            background: #444;
+            border-color: #00aaff;
+        }
+        
+        button.active {
+            background: #00aaff;
+            border-color: #00aaff;
+            color: #000;
+        }
+        
+        .blackout-btn {
+            width: 100%;
+            padding: 15px;
+            background: #aa0000;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .blackout-btn.active {
+            background: #ff0000;
+        }
+        
+        .info-panel {
+            background: #222;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+        
+        footer {
+            background: #2a2a2a;
+            padding: 10px 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+            border-top: 1px solid #444;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>⚡ BeamCommander 2.0</h1>
+            <div class="status">
+                <div class="status-dot"></div>
+                <span>OSC Port: <strong id="osc-port">9000</strong></span>
+                <span>Uptime: <strong id="uptime">--</strong></span>
+            </div>
+        </header>
+        
+        <main>
+            <div id="canvas-container">
+                <canvas id="laser-canvas"></canvas>
+            </div>
+            
+            <div id="controls">
+                <div class="control-group">
+                    <h3>💡 Brightness & Effects</h3>
+                    <div class="control-item">
+                        <label>Master Brightness <span class="value-display" id="brightness-val">100%</span></label>
+                        <input type="range" id="brightness" min="0" max="100" value="100">
+                    </div>
+                    <div class="control-item">
+                        <label>Dot Amount <span class="value-display" id="dot-val">100%</span></label>
+                        <input type="range" id="dot-amount" min="0" max="100" value="100">
+                    </div>
+                    <div class="control-item">
+                        <button class="blackout-btn" id="blackout-btn">BLACKOUT</button>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>🔷 Shape</h3>
+                    <div class="button-group three-col">
+                        <button class="shape-btn active" data-shape="circle">Circle</button>
+                        <button class="shape-btn" data-shape="line">Line</button>
+                        <button class="shape-btn" data-shape="triangle">Triangle</button>
+                        <button class="shape-btn" data-shape="square">Square</button>
+                        <button class="shape-btn" data-shape="wave">Wave</button>
+                        <button class="shape-btn" data-shape="staticwave">Static Wave</button>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>🎨 Color</h3>
+                    <div class="button-group three-col">
+                        <button class="color-btn" data-color="blue">Blue</button>
+                        <button class="color-btn" data-color="red">Red</button>
+                        <button class="color-btn" data-color="green">Green</button>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>🌈 Rainbow</h3>
+                    <div class="control-item">
+                        <label>Amount <span class="value-display" id="rainbow-amount-val">0%</span></label>
+                        <input type="range" id="rainbow-amount" min="0" max="100" value="0">
+                    </div>
+                    <div class="control-item">
+                        <label>Speed <span class="value-display" id="rainbow-speed-val">0</span></label>
+                        <input type="range" id="rainbow-speed" min="-200" max="200" value="0">
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>↔️ Movement</h3>
+                    <div class="button-group">
+                        <button class="move-btn active" data-move="none">None</button>
+                        <button class="move-btn" data-move="circle">Circle</button>
+                        <button class="move-btn" data-move="pan">Pan</button>
+                        <button class="move-btn" data-move="tilt">Tilt</button>
+                        <button class="move-btn" data-move="eight">Figure-8</button>
+                        <button class="move-btn" data-move="random">Random</button>
+                    </div>
+                    <div class="control-item">
+                        <label>Size <span class="value-display" id="move-size-val">50%</span></label>
+                        <input type="range" id="move-size" min="0" max="100" value="50">
+                    </div>
+                    <div class="control-item">
+                        <label>Speed <span class="value-display" id="move-speed-val">0.3</span></label>
+                        <input type="range" id="move-speed" min="-200" max="200" value="30">
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>⚙️ Transform</h3>
+                    <div class="control-item">
+                        <label>Scale <span class="value-display" id="scale-val">0</span></label>
+                        <input type="range" id="scale" min="-100" max="100" value="0">
+                    </div>
+                    <div class="control-item">
+                        <label>Rotation Speed <span class="value-display" id="rotation-val">0</span></label>
+                        <input type="range" id="rotation-speed" min="-200" max="200" value="0">
+                    </div>
+                    <div class="control-item">
+                        <label>Position X <span class="value-display" id="pos-x-val">0</span></label>
+                        <input type="range" id="pos-x" min="-100" max="100" value="0">
+                    </div>
+                    <div class="control-item">
+                        <label>Position Y <span class="value-display" id="pos-y-val">0</span></label>
+                        <input type="range" id="pos-y" min="-100" max="100" value="0">
+                    </div>
+                </div>
+                
+                <div class="info-panel">
+                    <div class="info-row">
+                        <span>Send OSC to:</span>
+                        <strong>localhost:9000</strong>
+                    </div>
+                    <div class="info-row">
+                        <span>Current Shape:</span>
+                        <strong id="current-shape">circle</strong>
+                    </div>
+                    <div class="info-row">
+                        <span>Current Color:</span>
+                        <strong id="current-color">blue</strong>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            BeamCommander v2.0.0 - Python Edition | Open Source Laser Control System
+        </footer>
+    </div>
+    
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

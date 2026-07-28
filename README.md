@@ -6,6 +6,18 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE.md)
 [![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey.svg)](https://github.com/oliverbyte/beamcommander)
 
+> ## ⚠️ THIS PROJECT IS DEPRECATED ⚠️
+>
+> **This repository has been rebuilt from the ground up and superseded by
+> [BeamCommander3](https://github.com/oliverbyte/beamcommander3)**, which
+> improves on everything here (native C++ backend, a modern Vue web UI,
+> MIDI controller support, per-laser zoning, cue system, and more).
+>
+> 👉 **Go use [oliverbyte/beamcommander3](https://github.com/oliverbyte/beamcommander3) instead.**
+>
+> This repo is kept around for historical/reference purposes only and is no
+> longer actively developed.
+
 BeamCommander 2.0 is a complete rewrite in Python, making it a truly generic and cross-platform laser control system. Control your laser shows in real-time using OSC commands through an intuitive browser-based interface.
 
 ## ✨ What's New in 2.0

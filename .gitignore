@@ -46,6 +46,13 @@ output.log
 # OS generated files
 Thumbs.db
 Desktop.ini
+
 # Jekyll build artifacts
 .jekyll-cache/
 website/_site/
+
+# Homebrew test artifacts
+*.tar.gz
+*.zip
+beamcommander-*.tar.gz
+

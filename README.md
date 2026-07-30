@@ -32,7 +32,30 @@ BeamCommander is a free, open-source laser control system that bridges OSC (Open
 
 ## Quick Start (Users)
 
-### How to Run BeamCommander
+### Installation
+
+BeamCommander can be installed in two ways:
+
+#### Option A: Homebrew (Recommended)
+
+The easiest way to install and manage BeamCommander on macOS. Homebrew handles all dependencies and provides easy updates.
+
+```bash
+# Add the BeamCommander tap
+brew tap oliverbyte/beamcommander https://github.com/oliverbyte/beamcommander
+
+# Install BeamCommander
+brew install beamcommander
+
+# Run BeamCommander
+beamcommander
+```
+
+To update: `brew update && brew upgrade beamcommander`
+
+#### Option B: macOS Application Bundle
+
+Download a traditional macOS `.app` bundle for drag-and-drop installation.
 
 1. **Download the Release Binary**
    - Go to the [Releases](https://github.com/oliverbyte/beamcommander/releases) page
@@ -43,14 +66,18 @@ BeamCommander is a free, open-source laser control system that bridges OSC (Open
    - Double-click `BeamCommander.app` or run it from terminal
    - The application will start listening for OSC commands on UDP port 9000
 
-3. **Initial Laser Setup (Required)**
+For detailed installation instructions, see [INSTALL.md](INSTALL.md).
+
+### Initial Setup
+
+1. **Initial Laser Setup (Required)**
    - **First Time**: The application opens with a configuration interface
    - **Add Laser Hardware**: Click "Add Laser" to detect your DAC device
    - **Zone Mapping**: Create and configure at least one output zone
    - **Test Output**: Verify laser output is working before performance use
    - **Save Configuration**: Settings are automatically saved for future sessions
 
-4. **Control Options**
+2. **Control Options**
 
    **Option A: Akai APC40 MIDI Controller**
    - Connect your Akai APC40 via USB
@@ -70,7 +97,7 @@ BeamCommander is a free, open-source laser control system that bridges OSC (Open
    - Access the web interface from any device on your network
 
 ### Prerequisites
-- macOS 15.6.1 or later
+- macOS 10.15 (Catalina) or later
 - **Compatible Laser DAC Hardware** (see Compatible Hardware section below)
 - Optional: Akai APC40 MIDI controller for physical control
 - Optional: Open Stage Control for web-based touch interface

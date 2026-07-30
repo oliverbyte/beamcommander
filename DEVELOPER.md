@@ -318,15 +318,46 @@ make -j8                    # Build only
 
 ## Deployment
 
-### Distribution
-- **Bundle**: Complete application with all dependencies
+### Distribution Methods
+
+#### 1. Homebrew (Recommended for Users)
+BeamCommander is installable via Homebrew using a custom tap:
+
+```bash
+brew tap oliverbyte/beamcommander https://github.com/oliverbyte/beamcommander
+brew install beamcommander
+```
+
+**For Maintainers**: See [HOMEBREW.md](HOMEBREW.md) for formula maintenance and release procedures.
+
+#### 2. Pre-built Application Bundle
+- **Bundle**: Complete `.app` bundle with all dependencies
 - **Configuration**: Include default OSC/MIDI mappings
 - **Documentation**: User guide and control references
+- **Distribution**: Via GitHub Releases
+
+#### 3. Source Distribution
+- Users can build from source using `./build.sh`
+- Requires Xcode Command Line Tools
+- See [INSTALL.md](INSTALL.md) for detailed instructions
 
 ### System Requirements
 - Minimum: macOS 10.15 (deployment target)
 - Recommended: macOS 15.6.1+ for development
 - Hardware: Any Mac with USB ports for controllers
+
+### Release Process
+
+When creating a new release:
+
+1. **Update Version Numbers**: Update any version strings in the codebase
+2. **Test Thoroughly**: Run all tests and manual verification
+3. **Create Git Tag**: `git tag -a v1.0.0 -m "Release 1.0.0"`
+4. **Update Homebrew Formula**: Update `Formula/beamcommander.rb` with new version and SHA256
+5. **Create GitHub Release**: Use the release workflow or create manually
+6. **Test Homebrew Installation**: Verify the formula works correctly
+
+See [HOMEBREW.md](HOMEBREW.md) for detailed Homebrew release procedures.
 
 ## Future Development
 
